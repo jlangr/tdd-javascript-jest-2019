@@ -1,0 +1,32 @@
+{
+  "name": "tdd-js-jest",
+  "version": "0.1.0",
+  "dependencies": {
+    "async": "^2.6.1",
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/plugin-transform-runtime": "^7.3.4",
+    "@babel/polyfill": "^7.2.5",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/register": "^7.0.0",
+    "@babel/runtime": "^7.3.4",
+    "babel-plugin-rewire-exports": "^1.0.1",
+    "chai": "^4.2.0",
+    "coffeescript": "^2.3.2",
+    "eslint": "^5.8.0",
+    "eslint-plugin-react": "^7.11.1",
+    "jest": "^24.1.0",
+    "sinon": "^7.1.1",
+    "sinon-chai": "^3.2.0",
+    "supertest": "^3.3.0",
+    "testdouble": "^3.8.2"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  }
+}

@@ -1,0 +1,56 @@
+
+-OK- linting in VS
+-OK- exercise: test doubles, with async await and without (i.e. directly with promises)
+-- mongodb
+-- legacy exercises
+-OK- quickie tests for JS, examples: add an element to an array, see if it's in there; equals comparison; etc.
+-OK- how to do double comparisons. chai expect(1.5).to.be.closeTo(1.502)  also: to.be.approximately
+-- integration testing tools?
+-OK- actions reducers etc
+-mostly OK- components--snapshot testing
+-OK- refactoring plugin VS
+-- understand sinon sandbox
+-OK- debugging
+-OK- simple prototype update to do test double
+-OK- nock testing--use for http package, not axios, I think
+-- expect throws
+-- sinon replace
+-- slides: Redux, component testing
+
+
+https://wietse.loves.engineering/testing-promises-with-mocha-90df8b7d2e35
+
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+
+
+-- Debugging.
+-- this worked: https://medium.com/@drcallaway/debugging-es6-in-visual-studio-code-4444db797954
+
+   debug configuration:
+  {
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run ES6 Tests",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceRoot}",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": [
+          "./src/**/*.test.js",
+          "--require", "babel-register",
+          "--require", "babel-polyfill",
+          "-u", "tdd",
+          "--timeout", "999999",
+          "--colors"
+      ],
+      "runtimeArgs": [ "--nolazy" ],
+      "sourceMaps": true
+    }
+  ]
+} 
+
+http://www.albertgao.xyz/2016/12/16/how-to-debug-mocha-tests-in-visual-studio-code-with-es5-or-es6/
