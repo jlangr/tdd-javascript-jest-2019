@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { app, server } from './index.js';
 import request from 'supertest';
 import async from 'async';
