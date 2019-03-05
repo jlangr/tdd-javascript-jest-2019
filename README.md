@@ -1,6 +1,6 @@
 ## Fundamentals
 
-This Javascript implementation uses Mocha, Chai, and supports ES6.
+This Javascript implementation uses Jest and supports ES6.
 
 ```
 npm install
