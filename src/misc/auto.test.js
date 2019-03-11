@@ -90,7 +90,7 @@ describe('sinon', () => {
   const funcReturningPromise = () => 
     new Promise((resolve, _reject) => setTimeout(resolve, 500, 41))
 
-  describe('testing promises', async () => {
+  describe('testing promises', () => {
     it('works but needs an it func under older node', async () => {
       const x = await funcReturningPromise()
       expect(x).toEqual(41)
