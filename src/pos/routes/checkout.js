@@ -91,7 +91,8 @@ const format = total =>
 
 const round = amount => Math.round(amount * 100) / 100
 
-const applyDiscount = function (discount, price) {
+const discount = function (checkout, price) {
+  const discount = discountPercent(checkout)
   return discount * price
 }
 
@@ -102,14 +103,11 @@ const createFailureResponse = (response, error) => {
 
 const retrieveCheckout = checkoutId => checkouts[checkoutId]
 
-let discountForCheckout = function (checkout) {
+let discountPercent = function (checkout) {
   return checkout.member ? checkout.discount : 0
 }
-let shouldApplyDiscount = function (item, checkout) {
-  return !item.exempt && discountForCheckout(checkout) > 0
-}
-let discountedPrice = function (item, checkout) {
-  return item.price * (1.0 - discountForCheckout(checkout))
+let discounted = function (item, checkout) {
+  return item.price * (1.0 - discountPercent(checkout))
 }
 let createSuccessResponse = function (response, checkoutId, checkoutTotal, totalOfDiscountedItems, messages, totalSaved) {
   response.status = 200
@@ -121,47 +119,53 @@ let createSuccessResponse = function (response, checkoutId, checkoutTotal, total
     totalSaved: round(totalSaved)
   })
 }
+let getTotalSaved = function (discountedItems, checkout) {
+  return discountedItems.reduce((total, item) => total + discount(checkout, item.price), 0)
+}
+let addItemMessages = function (checkout) {
+  const messages = []
+  checkout.items.forEach(item => {
+    addMessage(item.price, messages, item.description)
+    if (shouldApplyDiscount(checkout, item))
+      addMessage(-discount(checkout, item.price), messages, `   ${discountPercent(checkout) * 100}% mbr disc`)
+  })
+  return messages
+}
+let discountedItemsTotal = function (discountedItems, checkout) {
+  return discountedItems.reduce((total, item) => total + discounted(item, checkout), 0)
+}
+let nonDiscountedItemsTotal = function (checkout) {
+  return checkout.items.filter(item => !shouldApplyDiscount(checkout, item)).reduce((total, item) =>
+    total + item.price, 0)
+}
+
+let shouldApplyDiscount = function (checkout, item) {
+  return !item.exempt && discountPercent(checkout) > 0
+}
+
 export const postCheckoutTotal = (request, response) => {
   const checkoutId = request.params.id
   const checkout = retrieveCheckout(checkoutId)
   if (!checkout) {
     createFailureResponse(response, 'nonexistent checkout')
-    return;
+    return
   }
 
-  const messages = []
-  let totalOfDiscountedItems = 0;
-  let checkoutTotal = 0;
-  let totalSaved = 0;
+  const discountedItems = checkout.items.filter(shouldApplyDiscount.bind(null, checkout))
+  const checkoutTotal = discountedItemsTotal(discountedItems, checkout) + nonDiscountedItemsTotal(checkout)
 
-  checkout.items.forEach(item => {
-    addMessage(item.price, messages, item.description)
-
-    if (shouldApplyDiscount(item, checkout)) {
-      totalOfDiscountedItems += discountedPrice(item, checkout)
-      checkoutTotal += discountedPrice(item, checkout)
-
-      addMessage(-applyDiscount(discountForCheckout(checkout), item.price),
-        messages,
-        `   ${discountForCheckout(checkout) * 100}% mbr disc`)
-
-      totalSaved += applyDiscount(discountForCheckout(checkout), item.price);
-    }
-    else {
-      checkoutTotal += item.price
-    }
-  })
-
+  const messages = addItemMessages(checkout)
   addMessage(round(checkoutTotal), messages, 'TOTAL')
+  const totalSaved = getTotalSaved(discountedItems, checkout)
   if (totalSaved > 0)
     addMessage(totalSaved, messages, '*** You saved:')
 
   createSuccessResponse(response,
     checkoutId,
     checkoutTotal,
-    totalOfDiscountedItems,
+    discountedItemsTotal(discountedItems, checkout),
     messages,
-    totalSaved)
+    getTotalSaved(discountedItems, checkout))
 }
 
 let addMessage = function (amount, messages, message) {

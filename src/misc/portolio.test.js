@@ -78,4 +78,63 @@ describe('a portfolio', () => {
 
     expect(Portfolio.symbolCount(portfolio)).toEqual(0)
   })
+
+  describe('the portfolio\'s value', () => {
+    const BayerPrice = 19
+    const IbmPrice = 100
+    let currentPriceStub
+
+    beforeEach(() => {
+      currentPriceStub = jest.fn()
+    })
+
+    it('is 0 when created', () => {
+      expect(Portfolio.value(portfolio)).toEqual(0)
+    })
+
+    it('is current share price for single share purchase', () => {
+      const currentPriceStub = () => BayerPrice
+      portfolio = Portfolio.purchase(portfolio, 'BAYN', 1)
+
+      expect(Portfolio.value(portfolio, currentPriceStub)).toEqual(BayerPrice)
+    })
+
+    it('multiplies share price by # of shares', () => {
+      const currentPriceStub = () => BayerPrice
+      portfolio =
+        Portfolio.purchase(portfolio, 'BAYN', 10)
+
+      const value = Portfolio.value(portfolio, currentPriceStub)
+
+      expect(value).toEqual(10 * BayerPrice)
+    })
+
+    it('adds values for all symbols', () => {
+      when(currentPriceStub).calledWith('BAYN').mockReturnValueOnce(BayerPrice)
+      when(currentPriceStub).calledWith('IBM').mockReturnValueOnce(IbmPrice)
+      portfolio = Portfolio.purchase(portfolio, 'BAYN', 20)
+      portfolio = Portfolio.purchase(portfolio, 'IBM', 30)
+
+      const value = Portfolio.value(portfolio, currentPriceStub)
+
+      expect(value).toEqual(20 * BayerPrice + 30 * IbmPrice)
+    })
+
+    describe('transaction auditing', () => {
+      it('audits when buying', () => {
+        const auditSpy = jest.fn()
+
+        portfolio = Portfolio.purchase(
+          portfolio,
+          'BAYN',
+          20,
+          auditSpy)
+
+        expect(auditSpy).toHaveBeenCalledWith(
+          'purchase',
+          expect.any(Number))
+      })
+
+    })
+  })
 })
