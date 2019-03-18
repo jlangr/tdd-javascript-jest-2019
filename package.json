@@ -28,7 +28,7 @@
   },
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch",
+    "test:watch": "jest --watch --notify",
     "test:doc": "jest --verbose"
   }
 }
