@@ -34,7 +34,7 @@ describe('a name normalizer', () => {
   })
 
   xit('throws when name contains two commas', () => {
-    expect(() => { normalize('Thurston, Howell, III'); }).toThrow()
+    expect(() => normalize('Thurston, Howell, III')).toThrow()
   })
 })
 
