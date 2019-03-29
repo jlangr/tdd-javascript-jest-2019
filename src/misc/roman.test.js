@@ -1,0 +1,25 @@
+import { convert } from './roman'
+
+describe('c', () => {
+  it('converts an arabic number to a roman number', () => {
+    expect(convert(1)).toEqual('I')
+    expect(convert(2)).toEqual('II')
+    expect(convert(3)).toEqual('III')
+    expect(convert(4)).toEqual('IV')
+    expect(convert(5)).toEqual('V')
+    expect(convert(9)).toEqual('IX')
+    expect(convert(10)).toEqual('X')
+    expect(convert(11)).toEqual('XI')
+    expect(convert(20)).toEqual('XX')
+    expect(convert(40)).toEqual('XL')
+    expect(convert(50)).toEqual('L')
+    expect(convert(90)).toEqual('XC')
+    expect(convert(100)).toEqual('C')
+    expect(convert(400)).toEqual('CD')
+    expect(convert(500)).toEqual('D')
+    expect(convert(900)).toEqual('CM')
+    expect(convert(1000)).toEqual('M')
+    expect(convert(1956)).toEqual('MCMLVI')
+    expect(convert(95)).toEqual('XCV')
+  })
+})

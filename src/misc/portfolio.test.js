@@ -1,4 +1,5 @@
 import * as Portfolio from './portfolio'
+import { when } from 'jest-when'
 
 describe('a portfolio', () => {
   let portfolio
@@ -83,6 +84,59 @@ describe('a portfolio', () => {
       portfolio = Portfolio.sell(
         portfolio, 'BAYN', purchased + 1)
     }).toThrow(RangeError)
+  })
 
+  describe('transaction auditing', () => {
+    it('audits on purchase', () => {
+      const auditSpy = jest.fn()
+
+      portfolio = Portfolio.buy(portfolio, 'BAYN', 10, auditSpy)
+
+      expect(auditSpy).toHaveBeenCalledWith('purchase 10 BAYN')
+    })
+  })
+
+  describe('a portfolio\'s value', () => {
+    const BayerCurrentValue = 200
+    const IbmCurrentValue = 150
+    let stubStockService
+
+    beforeEach(() => {
+      stubStockService = jest.fn()
+    })
+
+    it('is worthless when created', () => {
+      expect(Portfolio.value(portfolio)).toEqual(0)
+    })
+
+    it('value is symbol price for single share purchase', () => {
+      stubStockService.mockReturnValue(BayerCurrentValue)
+      portfolio =
+        Portfolio.buy(portfolio, 'BAYN', 1)
+
+      expect(Portfolio.value(portfolio, stubStockService))
+        .toEqual(BayerCurrentValue)
+    })
+
+    it('multiples price by shares', () => {
+      stubStockService.mockReturnValue(BayerCurrentValue)
+      portfolio =
+        Portfolio.buy(
+          portfolio, 'BAYN', 10)
+
+      expect(Portfolio.value(portfolio, stubStockService))
+        .toEqual(BayerCurrentValue * 10)
+    })
+
+    it('accumulates values for all symbols', () => {
+      when(stubStockService).calledWith('BAYN').mockReturnValue(BayerCurrentValue)
+      when(stubStockService).calledWith('IBM').mockReturnValue(IbmCurrentValue)
+
+      portfolio = Portfolio.buy(portfolio, 'BAYN', 10)
+      portfolio = Portfolio.buy(portfolio, 'IBM', 20)
+
+      expect(Portfolio.value(portfolio, stubStockService))
+        .toEqual(BayerCurrentValue * 10 + IbmCurrentValue * 20)
+    })
   })
 })
