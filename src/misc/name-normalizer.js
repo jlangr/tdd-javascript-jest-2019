@@ -17,9 +17,9 @@ const middleInitials = name =>
 
 const isMononym = name => parts(name).length === 1
 
-const splitSuffix = name => {
+const parse = name => {
   const [baseName, suffix] = name.split(',')
-  return [baseName, suffix ? `,${suffix}` : '']
+  return { name, baseName, suffix }
 }
 
 const throwOnExcessCommas = name => {
@@ -27,13 +27,16 @@ const throwOnExcessCommas = name => {
     throw new Error()
 }
 
-const format = (baseName, suffix) => {
+const suffix = parsedName => parsedName.suffix ? `,${parsedName.suffix}` : ''
+
+const format = (parsedName) => {
+  const baseName = parsedName.baseName
   if (isMononym(baseName)) return baseName
-  return `${last(baseName)}, ${first(baseName)}${middleInitials(baseName)}${suffix}`
+  return `${last(baseName)}, ${first(baseName)}${middleInitials(baseName)}${suffix(parsedName)}`
 }
 
 export const normalize = name => {
   throwOnExcessCommas(name)
-  const [baseName, suffix] = splitSuffix(name)
-  return format(baseName, suffix)
+  const parsedName = parse(name)
+  return format(parsedName)
 }

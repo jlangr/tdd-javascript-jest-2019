@@ -17,6 +17,8 @@ describe('a name normalizer', () => {
     expect(normalize('  Big Boi   ')).toEqual('Boi, Big')
   })
 
+  // ' madonna    '
+
   it('initializes middle name', () => {
     expect(normalize('Henry David Thoreau')).toEqual('Thoreau, Henry D.')
   })
