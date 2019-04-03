@@ -14,10 +14,9 @@ const conversions = [
   { arabicDigit: 1, romanDigit: 'I'}
 ]
 
-export const convert = arabic => {
-  return conversions.reduce((s, { arabicDigit, romanDigit }) => {
-    const result = s + romanDigit.repeat(arabic / arabicDigit)
-    arabic %= arabicDigit
-    return result
-  }, '')
-}
+export const convert = arabic =>
+  conversions.reduce(({ roman, arabic }, { arabicDigit, romanDigit }) =>
+    ({
+      roman: roman + romanDigit.repeat(arabic / arabicDigit),
+      arabic: arabic % arabicDigit
+    }), { roman: '', arabic }).roman
