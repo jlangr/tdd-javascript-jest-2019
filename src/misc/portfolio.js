@@ -1,3 +1,5 @@
+import * as StockService from './stock-service'
+
 export const create = () => ({ holdings: {} })
 
 const soldAll = (portfolio, symbol) => sharesOf(portfolio, symbol) === 0
@@ -40,4 +42,14 @@ export const sharesOf = (portfolio, symbol) => {
     return 0
   return portfolio.holdings[symbol]
 }
+export const value2 = (portfolio) =>
+  Object.entries(portfolio.holdings)
+    .reduce((total, [ symbol, shares ]) =>
+      total + StockService.price(symbol) * shares
+    , 0)
 
+export const value = (portfolio, priceService=StockService.price) =>
+  Object.entries(portfolio.holdings)
+    .reduce((total, [ symbol, shares ]) =>
+      total + priceService(symbol) * shares
+    , 0)
