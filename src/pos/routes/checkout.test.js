@@ -187,20 +187,24 @@ describe('checkout functionality', () => {
       postItem({params: {id: checkoutId}, body: {upc}}, response)
     }
 
-    describe('when two items are scanned', () => {
+    describe('given two items are scanned', () => {
       beforeEach(() => {
         purchaseItem('', 3)
         purchaseItem('', 4)
-
-        postCheckoutTotal({params: {id: checkoutId}}, response)
       })
 
-      it('populates response with total of item prices', () => {
-        expectResponseMatches({ total: 3 + 4})
-      })
+      describe('when checkout total is requested', () => {
+        beforeEach(() => {
+          postCheckoutTotal({params: {id: checkoutId}}, response)
+        })
 
-      it('returns success status', () => {
-        expect(response.status).toEqual(200)
+        it('populates response with total of item prices', () => {
+          expectResponseMatches({ total: 3 + 4})
+        })
+
+        it('returns success status', () => {
+          expect(response.status).toEqual(200)
+        })
       })
     })
 
