@@ -175,36 +175,34 @@ describe('checkout functionality', () => {
     })
   })
 
-  const expectSuccessResponseMatching = matchObject => {
-    expect(response.status).toEqual(200)
-    expect(sinon.assert.calledWith(response.send, sinon.match(matchObject)))
-  }
-
   const expectErrorResponse = errorMessage => {
     expectResponseEquals({ error: errorMessage })
     expect(response.status).toEqual(400)
   }
 
-  describe('checkout total', () => {
+  const scanItem = (upc, price) => {
+    itemDatabaseRetrieveStub.callsFake(_ => ({upc, price, description: '', exempt: false}))
+    postItem({params: {id: checkoutId}, body: { upc }}, response)
+  }
+
+  describe('given a checkout with two items', () => {
     beforeEach(() => {
       Generator.reset(checkoutId)
       postCheckout({}, response)
-      // sendSpy.resetHistory()
-    })
 
-    const scanItem = (upc, price) => {
-      itemDatabaseRetrieveStub.callsFake(_ => ({upc, price, description: '', exempt: false}))
-      postItem({params: {id: checkoutId}, body: { upc }}, response)
-      // sendSpy.resetHistory()
-    }
-
-    it('returns reponse with total of items scanned', () => {
       scanItem('333', 3.00)
       scanItem('444', 4.00)
+    })
 
-      postCheckoutTotal({params: {id: checkoutId}}, response)
+    describe('when a checkout total is requested', () => {
+      beforeEach(() =>
+        postCheckoutTotal({params: {id: checkoutId}}, response))
 
-      expectSuccessResponseMatching({ total: 7.00 })
+      it('returns a 200 response', () => {
+        expect(response.status).toEqual(200) })
+
+      it('returns reponse with total of items scanned', () => {
+        expectResponseMatches({ total: 7.00 }) })
     })
 
     it('returns error on invalid checkout ID', () => {
