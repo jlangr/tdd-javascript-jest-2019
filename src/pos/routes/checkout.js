@@ -151,7 +151,6 @@ export const postCheckoutTotal = (request, response) => {
 
   if (totalSaved > 0) {
     const formattedTotal = parseFloat(Math.round(totalSaved * 100) / 100).toFixed(2);
-    console.log(`formattedTotal: ${formattedTotal}`);
     const formattedTotalWidth = formattedTotal.length;
     const textWidth = LineWidth - formattedTotalWidth;
     messages.push(pad('*** You saved:', textWidth) + formattedTotal);

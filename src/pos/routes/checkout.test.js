@@ -1,5 +1,5 @@
 import sinon from 'sinon'
-import { 
+import {
   clearAllCheckouts,
   getCheckout,
   getCheckouts,
@@ -175,29 +175,42 @@ describe('checkout functionality', () => {
     })
   })
 
+  const expectSuccessResponseMatching = matchObject => {
+    expect(response.status).toEqual(200)
+    expect(sinon.assert.calledWith(response.send, sinon.match(matchObject)))
+  }
+
+  const expectErrorResponse = errorMessage => {
+    expectResponseEquals({ error: errorMessage })
+    expect(response.status).toEqual(400)
+  }
+
   describe('checkout total', () => {
-    it('does stuff', () => {
+    beforeEach(() => {
       Generator.reset(checkoutId)
       postCheckout({}, response)
-      sendSpy.resetHistory()
-      // set up for discountng
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', price: 3.33, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
-      sendSpy.resetHistory()
-      console.log('req id', checkoutId )
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '444', price: 4.44, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '444' } }, response)
-      sendSpy.resetHistory()
-      const request = { params: { id: checkoutId }}
-      postCheckoutTotal(request, response)
-      expect(response.status).toEqual(200)
-      console.log('reseponse status', response.status)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ total: 7.77 })))
+      // sendSpy.resetHistory()
+    })
 
-      //  not found
+    const scanItem = (upc, price) => {
+      itemDatabaseRetrieveStub.callsFake(_ => ({upc, price, description: '', exempt: false}))
+      postItem({params: {id: checkoutId}, body: { upc }}, response)
+      // sendSpy.resetHistory()
+    }
+
+    it('returns reponse with total of items scanned', () => {
+      scanItem('333', 3.00)
+      scanItem('444', 4.00)
+
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+
+      expectSuccessResponseMatching({ total: 7.00 })
+    })
+
+    it('returns error on invalid checkout ID', () => {
       postCheckoutTotal({ params: { id: 'unknown' }}, response)
-      expect(response.status).toEqual(400)
-      sinon.assert.calledWith(response.send, { error: 'nonexistent checkout' })
+
+      expectErrorResponse('nonexistent checkout')
     })
 
     it('applies any member discount', () => {
