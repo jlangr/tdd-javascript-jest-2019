@@ -1,6 +1,6 @@
 import { normalize } from './name-normalizer'
 
-describe('a name normalizer', () => {
+describe('a name normalizer formats name in last-first order and', () => {
   it('returns empty when passed empty string', () => {
     expect(normalize('')).toEqual('')
   })

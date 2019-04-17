@@ -1,5 +1,5 @@
 import sinon from 'sinon'
-import { 
+import {
   clearAllCheckouts,
   getCheckout,
   getCheckouts,
@@ -108,9 +108,11 @@ describe('checkout functionality', () => {
     beforeEach(()=> {
       addCheckout(checkoutId)
     })
+    const SomeDescription = 'Milk'
+    const SomeArbitraryPrice = 3.33
 
     it('returns created object on post', () => {
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', description: 'Milk', price: 3.33 }))
+      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', description: SomeDescription, price: SomeArbitraryPrice }))
       Generator.reset(1002)
 
       postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
@@ -175,27 +177,32 @@ describe('checkout functionality', () => {
     })
   })
 
+  const scanItem = (upc, price) => {
+    itemDatabaseRetrieveStub.callsFake(_ => ({upc, price, description: '', exempt: false}))
+    postItem({params: {id: checkoutId}, body: {upc}}, response)
+    sendSpy.resetHistory()
+  }
+
   describe('checkout total', () => {
-    it('does stuff', () => {
+    beforeEach(() => {
       Generator.reset(checkoutId)
       postCheckout({}, response)
-      sendSpy.resetHistory()
-      // set up for discountng
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', price: 3.33, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
-      sendSpy.resetHistory()
-      console.log('req id', checkoutId )
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '444', price: 4.44, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '444' } }, response)
-      sendSpy.resetHistory()
-      const request = { params: { id: checkoutId }}
-      postCheckoutTotal(request, response)
-      expect(response.status).toEqual(200)
-      console.log('reseponse status', response.status)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ total: 7.77 })))
+      // sendSpy.resetHistory()
+    })
 
-      //  not found
+    it('does stuff', () => {
+      scanItem('333', 3)
+      scanItem('444', 4)
+
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+
+      expect(response.status).toEqual(200)
+      expectResponseMatches({ total: 7 })
+    })
+
+    it('returns error response on nonexistent checkout id', () => {
       postCheckoutTotal({ params: { id: 'unknown' }}, response)
+
       expect(response.status).toEqual(400)
       sinon.assert.calledWith(response.send, { error: 'nonexistent checkout' })
     })
