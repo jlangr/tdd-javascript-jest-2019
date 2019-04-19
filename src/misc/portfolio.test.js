@@ -1,4 +1,5 @@
 import * as Portfolio from './portfolio'
+import { when } from 'jest-when'
 
 describe('a portfolio', () => {
   let portfolio
@@ -75,5 +76,50 @@ describe('a portfolio', () => {
     expect(() =>
       portfolio = Portfolio.sell(portfolio, 'BAYN', 50 + 1)
     ).toThrow(RangeError)
+  })
+
+  describe('portfolio value', () => {
+    const BayerPrice = 20
+    const IbmPrice = 100
+
+    let stockService = symbol =>
+      symbol === 'IBM' ? IbmPrice: BayerPrice
+
+    it('is zero when created', () => {
+      expect(Portfolio.value(portfolio, stockService)).toEqual(0)
+    })
+
+    it('is share price for single-share purchase', () => {
+      portfolio = Portfolio.buy(portfolio, 'BAYN', 1)
+
+      expect(Portfolio.value(portfolio, stockService)).toEqual(BayerPrice)
+    })
+
+    it('multiplies # shares by price', () => {
+      portfolio = Portfolio.buy(portfolio, 'BAYN', 10)
+
+      expect(Portfolio.value(portfolio, stockService)).toEqual(BayerPrice * 10)
+    })
+
+    it('accumulates values for multiple symbols', () => {
+      portfolio = Portfolio.buy(portfolio, 'BAYN', 30)
+      portfolio = Portfolio.buy(portfolio, 'IBM', 20)
+
+      expect(Portfolio.value(portfolio, stockService))
+        .toEqual(BayerPrice * 30
+        + IbmPrice * 20)
+    })
+
+    it('accumulates values for multiple symbols', () => {
+      stockService = jest.fn()
+      when(stockService).calledWith('IBM').mockReturnValue(IbmPrice)
+      when(stockService).calledWith('BAYN').mockReturnValue(BayerPrice)
+      portfolio = Portfolio.buy(portfolio, 'BAYN', 30)
+      portfolio = Portfolio.buy(portfolio, 'IBM', 20)
+
+      expect(Portfolio.value(portfolio, stockService))
+        .toEqual(BayerPrice * 30
+          + IbmPrice * 20)
+    })
   })
 })

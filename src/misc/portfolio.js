@@ -1,3 +1,5 @@
+import * as Stocks from './stock-service'
+
 export const create = () => ({ holdings: {} })
 
 export const isEmpty = portfolio => count(portfolio) === 0
@@ -46,3 +48,9 @@ const removeIfEmpty = (portfolio, symbol) => {
     return portfolio
   return remove(portfolio, symbol)
 }
+
+export const value = (portfolio, stockService=Stocks.price()) =>
+  Object.entries(portfolio.holdings)
+    .reduce((total, [ symbol, shares ]) =>
+      total + stockService(symbol) * shares
+    , 0)

@@ -118,37 +118,55 @@ const calculateTotal = (checkout, discount) => {
   return round2(total)
 }
 
+const calculateTotalOfDiscountedItems = (checkout, discount) => {
+  let totalOfDiscountedItems = 0
+  checkout.items.forEach(item => {
+    if (shouldBeDiscounted(item, discount))
+      totalOfDiscountedItems += item.price * (1.0 - discount)
+  })
+  return round2(totalOfDiscountedItems)
+}
+
+const calculateTotalSaved = (checkout, discount) => {
+  let totalSaved = 0
+  checkout.items.forEach(item => {
+    if (shouldBeDiscounted(item, discount))
+      totalSaved += discount * item.price
+  })
+  return round2(totalSaved)
+}
+
+let createReceiptMessages = function (checkout, discount, totals) {
+  let messages = []
+
+  checkout.items.forEach(item => {
+    messages.push(lineItem(item.price, item.description))
+    if (shouldBeDiscounted(item, discount)) {
+      const discountAmount = discount * item.price
+      messages.push(lineItem(-1 * discountAmount, `   ${discount * 100}% mbr disc`))
+    }
+  })
+
+  messages.push(lineItem(totals.total, 'TOTAL'))
+  if (totals.totalSaved > 0)
+    messages.push(lineItem(totals.totalSaved, '*** You saved:'))
+  return messages
+}
+
 const createReceiptResponse = checkoutId => {
   const checkout = retrieveCheckout(checkoutId)
   const discount = memberDiscountPercent(checkout)
 
-  const response = {
-    total: calculateTotal(checkout, discount),
+  const totals = {
     id: checkoutId,
-    totalOfDiscountedItems: 0,
-    totalSaved: 0,
-    messages: []
+    total: calculateTotal(checkout, discount),
+    totalOfDiscountedItems: calculateTotalOfDiscountedItems(checkout, discount),
+    totalSaved: calculateTotalSaved(checkout, discount),
   }
 
-  checkout.items.forEach(item => {
-    response.messages.push(lineItem(item.price, item.description))
-    if (shouldBeDiscounted(item, discount)) {
-      const discountAmount = discount * item.price
-      const discountedPrice = item.price * (1.0 - discount)
+  totals.messages = createReceiptMessages(checkout, discount, totals)
 
-      response.totalOfDiscountedItems += discountedPrice
-      response.totalSaved += discountAmount
-
-      response.messages.push(lineItem(-1 * discountAmount, `   ${discount * 100}% mbr disc`))
-    }
-  })
-
-  response.messages.push(lineItem(response.total, 'TOTAL'))
-  if (response.totalSaved > 0)
-    response.messages.push(lineItem(response.totalSaved, '*** You saved:'))
-  response.totalOfDiscountedItems = round2(response.totalOfDiscountedItems)
-  response.totalSaved = round2(response.totalSaved)
-  return response
+  return totals
 }
 
 const sendError = (response, errorMessage) => {
