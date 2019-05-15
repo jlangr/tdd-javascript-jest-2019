@@ -1,167 +1,153 @@
-import Generator from '../data/id-generator';
-import ItemDatabase from '../data/item_database';
-import MemberDatabase from '../data/member_database';
+import Generator from '../data/id-generator'
+import ItemDatabase from '../data/item_database'
+import MemberDatabase from '../data/member_database'
 
-const checkouts = {};
+const checkouts = {}
 
-const itemDatabase = new ItemDatabase();
-const memberDatabase = new MemberDatabase();
+const itemDatabase = new ItemDatabase()
+const memberDatabase = new MemberDatabase()
 
 export const clearAllCheckouts = (_, __) => {
-  for (var member in checkouts) delete checkouts[member];
-};
+  for (var member in checkouts) delete checkouts[member]
+}
 
 export const getCheckout = (request, response) => {
-  const checkout = checkouts[request.params.id];
-  return response.send(checkout);
-};
+  const checkout = checkouts[request.params.id]
+  return response.send(checkout)
+}
 
 export const getCheckouts = (_, response) => {
-  return response.send(Object.values(checkouts));
-};
+  return response.send(Object.values(checkouts))
+}
 
 export const postCheckout = (_, response) => {
-  const newCheckout = { id: Generator.id(), items: [] };
-  checkouts[newCheckout.id] = newCheckout;
-  response.status = 201;
-  response.send(newCheckout);
-};
+  const newCheckout = { id: Generator.id(), items: [] }
+  checkouts[newCheckout.id] = newCheckout
+  response.status = 201
+  response.send(newCheckout)
+}
 
 export const getItems = (request, response) => {
-  const id = request.params.id;
-  const checkout = checkouts[id];
-  response.send(checkout.items);
-};
+  const id = request.params.id
+  const checkout = checkouts[id]
+  response.send(checkout.items)
+}
 
 export const postMember = (request, response) => {
-  const body = request.body;
-  const member = memberDatabase.retrieve(body.id);
+  const body = request.body
+  const member = memberDatabase.retrieve(body.id)
   if (!member) {
-    response.status = 400;
-    response.send({error: 'unrecognized member'});
-    return;
+    response.status = 400
+    response.send({error: 'unrecognized member'})
+    return
   }
 
-  const checkoutId = request.params.id;
+  const checkoutId = request.params.id
 
-  const checkout = checkouts[checkoutId];
+  const checkout = checkouts[checkoutId]
   if (!checkout) {
-    response.status = 400;
-    response.send({error: 'invalid checkout'});
-    return;
+    response.status = 400
+    response.send({error: 'invalid checkout'})
+    return
   }
-  Object.assign(checkout, member);
+  Object.assign(checkout, member)
 
-  response.status = 200;
-  response.send(checkouts[checkoutId]);
-};
+  response.status = 200
+  response.send(checkouts[checkoutId])
+}
 
 export const postItem = (request, response) => {
-  const body = request.body;
-  const checkoutId = request.params.id;
-  const newCheckoutItem = { id: Generator.id() };
-  const item = itemDatabase.retrieve(body.upc);
+  const body = request.body
+  const checkoutId = request.params.id
+  const newCheckoutItem = { id: Generator.id() }
+  const item = itemDatabase.retrieve(body.upc)
   if (!item) {
-    response.status = 400;
-    response.send({error: 'unrecognized UPC code'});
-    return;
+    response.status = 400
+    response.send({error: 'unrecognized UPC code'})
+    return
   }
 
-  Object.assign(newCheckoutItem, item);
+  Object.assign(newCheckoutItem, item)
 
-  const checkout = checkouts[checkoutId];
+  const checkout = checkouts[checkoutId]
   if (!checkout) {
-    response.status = 400;
-    response.send({error: 'nonexistent checkout'});
-    return;
+    response.status = 400
+    response.send({error: 'nonexistent checkout'})
+    return
   }
 
-  checkout.items.push(newCheckoutItem);
+  checkout.items.push(newCheckoutItem)
 
-  response.status = 201;
-  response.send(newCheckoutItem);
-};
+  response.status = 201
+  response.send(newCheckoutItem)
+}
 
-const pad = (s, length) => s + ' '.repeat(length - s.length);
+const pad = (s, length) => s + ' '.repeat(length - s.length)
 
-const LineWidth = 45;
+const LineWidth = 45
 
+const round2 = number => Math.round(number * 100) / 100
+
+const lineItem = (dollarAmount, description) => {
+  const formattedTotal = parseFloat(round2(dollarAmount)).toFixed(2)
+  const formattedTotalWidth = formattedTotal.length
+  const textWidth = LineWidth - formattedTotalWidth
+  return pad(description, textWidth) + formattedTotal
+}
+
+let memberDiscountPercent = function (checkout) {
+  return checkout.member ? checkout.discount : 0
+}
+let discountedPrice = function (price, checkout) {
+  return price * (1.0 - memberDiscountPercent(checkout))
+}
+
+const errorResponse = (response, message) => {
+  response.status = 400
+  response.send({error: message})
+}
+
+let successResponse = function (response, responseBody) {
+  response.status = 200
+  response.send(responseBody)
+}
 export const postCheckoutTotal = (request, response) => {
-  const checkoutId = request.params.id;
-  const checkout = checkouts[checkoutId];
+  const checkoutId = request.params.id
+  const checkout = checkouts[checkoutId]
   if (!checkout) {
-    response.status = 400;
-    response.send({error: 'nonexistent checkout'});
-    return;
+    errorResponse(response, 'nonexistent checkout')
+    return
   }
 
-  const messages = [];
-  const discount = checkout.member ? checkout.discount : 0;
+  const messages = []
 
-  let totalOfDiscountedItems = 0;
-  let total = 0;
-  let totalSaved = 0;
+  let totalOfDiscountedItems = 0
+  let totalForCheckout = 0
+  let totalSaved = 0
 
   checkout.items.forEach(item => {
-    let price = item.price;
-    const isExempt = item.exempt;
-    if (!isExempt && discount > 0) {
-      const discountAmount = discount * price;
-      const discountedPrice = price * (1.0 - discount);
+    let price = item.price
+    messages.push(lineItem(price, item.description))
+    if (!item.exempt && memberDiscountPercent(checkout) > 0) {
+      messages.push(lineItem(-1 * memberDiscountPercent(checkout) * price, `   ${memberDiscountPercent(checkout) * 100}% mbr disc`))
 
-      // add into total
-      totalOfDiscountedItems += discountedPrice;
-
-      let text = item.description;
-      // format percent
-      const amount = parseFloat(Math.round(price * 100) / 100).toFixed(2);
-      const amountWidth = amount.length;
-
-      let textWidth = LineWidth - amountWidth;
-      messages.push(pad(text, textWidth) + amount);
-
-      total += discountedPrice;
-
-      // discount line
-      const discountFormatted = '-' + parseFloat(Math.round(discountAmount * 100) / 100).toFixed(2);
-      textWidth = LineWidth - discountFormatted.length;
-      text = `   ${discount * 100}% mbr disc`;
-      messages.push(`${pad(text, textWidth)}${discountFormatted}`);
-
-      totalSaved += discountAmount;
+      totalOfDiscountedItems += discountedPrice(price, checkout)
+      totalForCheckout += discountedPrice(price, checkout)
+      totalSaved += memberDiscountPercent(checkout) * price
     }
-    else {
-      total += price;
-      const text = item.description;
-      const amount = parseFloat(Math.round(price * 100) / 100).toFixed(2);
-      const amountWidth = amount.length;
+    else
+      totalForCheckout += price
+  })
 
-      const textWidth = LineWidth - amountWidth;
-      messages.push(pad(text, textWidth) + amount);
-    }
-  });
+  messages.push(lineItem(round2(totalForCheckout), 'TOTAL'))
+  if (totalSaved > 0)
+    messages.push(lineItem(totalSaved, '*** You saved:'))
 
-  total = Math.round(total * 100) / 100;
-
-  // append total line
-  const formattedTotal = parseFloat(Math.round(total * 100) / 100).toFixed(2);
-  const formattedTotalWidth = formattedTotal.length;
-  const textWidth = LineWidth - formattedTotalWidth;
-  messages.push(pad('TOTAL', textWidth) + formattedTotal);
-
-  if (totalSaved > 0) {
-    const formattedTotal = parseFloat(Math.round(totalSaved * 100) / 100).toFixed(2);
-    console.log(`formattedTotal: ${formattedTotal}`);
-    const formattedTotalWidth = formattedTotal.length;
-    const textWidth = LineWidth - formattedTotalWidth;
-    messages.push(pad('*** You saved:', textWidth) + formattedTotal);
-  }
-
-  totalOfDiscountedItems = Math.round(totalOfDiscountedItems * 100) / 100;
-
-  totalSaved = Math.round(totalSaved * 100) / 100;
-
-  response.status = 200;
-  // send total saved instead
-  response.send({ id: checkoutId, total, totalOfDiscountedItems, messages, totalSaved });
-};
+  successResponse(response, {
+    id: checkoutId,
+    total: round2(totalForCheckout),
+    totalOfDiscountedItems: round2(totalOfDiscountedItems),
+    messages,
+    totalSaved: round2(totalSaved)
+  })
+}
