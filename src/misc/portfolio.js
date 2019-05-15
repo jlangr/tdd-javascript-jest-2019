@@ -4,6 +4,11 @@ export const create = () => {
   }
 }
 
+export const value = (portfolio, stockLookupService) =>
+  Object.entries(portfolio.symbols).reduce((total, [symbol, shares]) =>
+    total + stockLookupService(symbol) * shares
+  , 0)
+
 export const isEmpty = portfolio => {
   return uniqueSymbolCount(portfolio) === 0;
 }

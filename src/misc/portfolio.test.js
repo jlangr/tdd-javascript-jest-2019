@@ -9,9 +9,39 @@ describe('a stock portfolio', () => {
 
   describe('portfolio value', () => {
     describe('when empty', () => {
+      it('is zero', () =>
+        expect(Portfolio.value(portfolio)).toEqual(0) )
     })
 
+    const BayerValue = 16
+    const IbmValue = 100
+    const stubService = symbol => symbol === 'IBM' ? IbmValue: BayerValue
+
     describe('on single share purchase', () => {
+      beforeEach(() => Portfolio.purchase(portfolio, 'BAYN', 1) )
+
+      it('has value of current share price', () =>
+        expect(Portfolio.value(portfolio, stubService)).toEqual(BayerValue))
+    })
+
+    describe('on multi-share purchase', () => {
+      beforeEach(() => Portfolio.purchase(portfolio, 'BAYN', 42))
+
+      it('has value of current share price', () =>
+        expect(Portfolio.value(portfolio, stubService))
+          .toEqual(42 * BayerValue))
+    })
+
+    describe('on multi-symbol purchase', () => {
+      beforeEach(() => {
+        Portfolio.purchase(portfolio, 'BAYN', 42)
+        Portfolio.purchase(portfolio, 'IBM', 10)
+      })
+
+      it('totals values for all symbols', () => {
+        expect(Portfolio.value(portfolio, stubService))
+          .toEqual(42 * BayerValue + 10 * IbmValue)
+      })
     })
   })
 
