@@ -111,6 +111,47 @@ let successResponse = function (response, responseBody) {
   response.status = 200
   response.send(responseBody)
 }
+
+const totalForCheckout = (checkout) => {
+  let totalForCheckout = 0
+  checkout.items.forEach(item => {
+    if (isDiscountable(item, checkout))
+      totalForCheckout += discountedPrice(item.price, checkout)
+    else
+      totalForCheckout += item.price
+  })
+  return totalForCheckout
+}
+
+const isDiscountable = (item, checkout) => !item.exempt && memberDiscountPercent(checkout) > 0
+
+const totalSaved = checkout =>
+  discountableItems(checkout).reduce(
+    (totalSaved, item) => totalSaved + memberDiscountPercent(checkout) * item.price, 0)
+
+const discountableItems = checkout =>
+  checkout.items.filter(item => isDiscountable(item, checkout))
+
+const totalOfDiscountedItems = checkout =>
+  discountableItems(checkout).reduce((total, item) =>
+    total + discountedPrice(item.price, checkout), 0)
+
+const collectMessages = checkout => {
+  const messages = []
+
+  checkout.items.forEach(item => {
+    messages.push(lineItem(item.price, item.description))
+    if (isDiscountable(item, checkout))
+      messages.push(lineItem(-1 * memberDiscountPercent(checkout) * item.price, `   ${memberDiscountPercent(checkout) * 100}% mbr disc`))
+  })
+
+  messages.push(lineItem(round2(totalForCheckout(checkout)), 'TOTAL'))
+  if (totalSaved(checkout) > 0)
+    messages.push(lineItem(totalSaved(checkout), '*** You saved:'))
+
+  return messages
+}
+
 export const postCheckoutTotal = (request, response) => {
   const checkoutId = request.params.id
   const checkout = checkouts[checkoutId]
@@ -119,35 +160,11 @@ export const postCheckoutTotal = (request, response) => {
     return
   }
 
-  const messages = []
-
-  let totalOfDiscountedItems = 0
-  let totalForCheckout = 0
-  let totalSaved = 0
-
-  checkout.items.forEach(item => {
-    let price = item.price
-    messages.push(lineItem(price, item.description))
-    if (!item.exempt && memberDiscountPercent(checkout) > 0) {
-      messages.push(lineItem(-1 * memberDiscountPercent(checkout) * price, `   ${memberDiscountPercent(checkout) * 100}% mbr disc`))
-
-      totalOfDiscountedItems += discountedPrice(price, checkout)
-      totalForCheckout += discountedPrice(price, checkout)
-      totalSaved += memberDiscountPercent(checkout) * price
-    }
-    else
-      totalForCheckout += price
-  })
-
-  messages.push(lineItem(round2(totalForCheckout), 'TOTAL'))
-  if (totalSaved > 0)
-    messages.push(lineItem(totalSaved, '*** You saved:'))
-
   successResponse(response, {
     id: checkoutId,
-    total: round2(totalForCheckout),
-    totalOfDiscountedItems: round2(totalOfDiscountedItems),
-    messages,
-    totalSaved: round2(totalSaved)
+    total: round2(totalForCheckout(checkout)),
+    totalOfDiscountedItems: round2(totalOfDiscountedItems(checkout)),
+    messages: collectMessages(checkout),
+    totalSaved: round2(totalSaved(checkout))
   })
 }
