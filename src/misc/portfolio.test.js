@@ -1,4 +1,5 @@
 import * as Portfolio from './portfolio'
+import { when } from 'jest-when'
 
 describe('a stock portfolio', () => {
   let portfolio;
@@ -15,32 +16,48 @@ describe('a stock portfolio', () => {
 
     const BayerValue = 16
     const IbmValue = 100
-    const stubService = symbol => symbol === 'IBM' ? IbmValue: BayerValue
+    let stubService
 
     describe('on single share purchase', () => {
       beforeEach(() => Portfolio.purchase(portfolio, 'BAYN', 1) )
 
-      it('has value of current share price', () =>
-        expect(Portfolio.value(portfolio, stubService)).toEqual(BayerValue))
+      it('has value of current share price', () => {
+        stubService = jest.fn()
+        when(stubService).calledWith('BAYN').mockReturnValueOnce(BayerValue)
+
+        expect(Portfolio.value(portfolio, stubService)).toEqual(BayerValue)
+      })
     })
 
     describe('on multi-share purchase', () => {
       beforeEach(() => Portfolio.purchase(portfolio, 'BAYN', 42))
 
-      it('has value of current share price', () =>
+      it('has value of current share price', () => {
+        stubService = jest.fn()
+        when(stubService).calledWith('BAYN').mockReturnValueOnce(BayerValue)
+
         expect(Portfolio.value(portfolio, stubService))
-          .toEqual(42 * BayerValue))
+          .toEqual(42 * BayerValue)
+      })
     })
 
     describe('on multi-symbol purchase', () => {
+      const IbmShares = 10
+      const BaynShares = 42
+
       beforeEach(() => {
-        Portfolio.purchase(portfolio, 'BAYN', 42)
-        Portfolio.purchase(portfolio, 'IBM', 10)
+        Portfolio.purchase(portfolio, 'BAYN', BaynShares)
+        Portfolio.purchase(portfolio, 'IBM', IbmShares)
+
+        stubService = jest.fn()
       })
 
       it('totals values for all symbols', () => {
+        when(stubService).calledWith('IBM').mockReturnValue(IbmValue)
+        when(stubService).calledWith('BAYN').mockReturnValue(BayerValue)
+
         expect(Portfolio.value(portfolio, stubService))
-          .toEqual(42 * BayerValue + 10 * IbmValue)
+          .toEqual( BaynShares * BayerValue + IbmShares * IbmValue)
       })
     })
   })
