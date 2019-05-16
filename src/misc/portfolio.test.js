@@ -1,3 +1,4 @@
+import { when } from 'jest-when'
 import * as Portfolio from './portfolio'
 
 describe('a stock portfolio', () => {
@@ -8,10 +9,80 @@ describe('a stock portfolio', () => {
   })
 
   describe('portfolio value', () => {
+    const mockedStockValues = { APPL: 1600, BAYER: 16 }
+    const stockPriceLookUpServiceStub = jest.fn()
+
+    beforeEach(() => {
+      stockPriceLookUpServiceStub.mockClear()
+      const { APPL, BAYER } = mockedStockValues
+
+      when(stockPriceLookUpServiceStub).calledWith("APPL").mockReturnValue(APPL)
+      when(stockPriceLookUpServiceStub).calledWith("BAYER").mockReturnValue(BAYER)
+    })
+
     describe('when empty', () => {
+      it('retun 0', () =>{
+        expect(Portfolio.value(portfolio, stockPriceLookUpServiceStub)).toBe(0)
+      })
     })
 
     describe('on single share purchase', () => {
+      it('returns the value of that share', () => {
+        Portfolio.purchase(portfolio, "APPL", 1)
+
+        expect(Portfolio.value(portfolio, stockPriceLookUpServiceStub)).toBe(mockedStockValues.APPL)
+      })
+    })
+
+    describe('on multiple share purchase of one stock', () => {
+      it('returns the total value of the shares', () => {
+        const shareQuantity = 4
+        Portfolio.purchase(portfolio, "APPL", shareQuantity)
+
+        expect(Portfolio.value(portfolio, stockPriceLookUpServiceStub)).toBe(mockedStockValues.APPL * shareQuantity)
+      })
+    })
+
+    describe('on multiple share purchase of multiple stocks', () => {
+      it('returns the total value of the shares', () => {
+        const shareQuantity = 4
+        Portfolio.purchase(portfolio, "APPL", shareQuantity)
+        Portfolio.purchase(portfolio, "BAYER", 5)
+        const expectedTotal = (mockedStockValues.APPL * shareQuantity) + (mockedStockValues.BAYER * 5)
+
+        expect(Portfolio.value(portfolio, stockPriceLookUpServiceStub)).toBe(expectedTotal)
+      })
+
+      it('calls the stub service for each purchased stock', () => {
+        const shareQuantity = 4
+        Portfolio.purchase(portfolio, "APPL", shareQuantity)
+        Portfolio.purchase(portfolio, "BAYER", 5)
+
+        Portfolio.value(portfolio, stockPriceLookUpServiceStub)
+
+        expect(stockPriceLookUpServiceStub.mock.calls.length).toBe(2)
+      })
+    })
+
+    describe('one single share sell', () => {
+
+      beforeEach(()=>{
+        Portfolio.purchase(portfolio, "APPL", 4)
+        Portfolio.purchase(portfolio, "BAYER", 5)
+        Portfolio.sell(portfolio, "APPL", 1)
+      })
+
+      it('return the remaining shares', () => {
+        expect(Portfolio.shareCount(portfolio, "APPL")).toBe((4-1))
+
+      })
+
+      it('return the value of remaining shares', () => {
+        const expectedValue = (mockedStockValues.APPL * Portfolio.shareCount(portfolio, "APPL")) + (mockedStockValues.BAYER * Portfolio.shareCount(portfolio, "BAYER"))
+        expect(Portfolio.value(portfolio, stockPriceLookUpServiceStub)).toBe(expectedValue)
+
+      })
+
     })
   })
 
