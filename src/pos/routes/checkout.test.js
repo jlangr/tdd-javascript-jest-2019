@@ -59,7 +59,7 @@ describe('checkout functionality', () => {
   })
 
   const expectResponseMatches = expected =>
-    expect(sinon.assert.calledWith(response.send, sinon.match(expected)))
+    sinon.assert.calledWith(response.send, sinon.match(expected))
 
   const expectResponseEquals = expected => 
     sinon.assert.calledWith(response.send, expected)
