@@ -1,5 +1,5 @@
 import sinon from 'sinon'
-import { 
+import {
   clearAllCheckouts,
   getCheckout,
   getCheckouts,
@@ -33,35 +33,35 @@ describe('checkout functionality', () => {
   afterEach(() => itemDatabaseRetrieveStub.restore())
   afterEach(() => memberDatabaseRetrieveStub.restore())
 
-  const purchaseItem = (upc, price, description, exempt = false) => { 
-    itemDatabaseRetrieveStub.callsFake(upc => ({ upc, price, description, exempt }))
-    postItem({ params: { id: checkoutId }, body: { upc } }, response)
+  const purchaseItem = (upc, price, description, exempt = false) => {
+    itemDatabaseRetrieveStub.callsFake(upc => ({upc, price, description, exempt}))
+    postItem({params: {id: checkoutId}, body: {upc}}, response)
     sendSpy.resetHistory()
   }
 
-  const purchaseExemptItem = (upc, price, description='') => { 
+  const purchaseExemptItem = (upc, price, description = '') => {
     purchaseItem(upc, price, description, true)
   }
 
-  const purchase = (upc, price, description='') => { 
+  const purchase = (upc, price, description = '') => {
     purchaseItem(upc, price, description, false)
   }
 
   const scanMember = (id, discount, name = 'Jeff Languid') => {
-    memberDatabaseRetrieveStub.callsFake(_ => ({ member: id, discount, name }))
-    postMember({ params: { id: checkoutId }, body: { id }}, response)
+    memberDatabaseRetrieveStub.callsFake(_ => ({member: id, discount, name}))
+    postMember({params: {id: checkoutId}, body: {id}}, response)
     sendSpy.resetHistory()
   }
 
-  const emptyResponse = () => ({ 
+  const emptyResponse = () => ({
     send: sendSpy,
-    status: undefined 
+    status: undefined
   })
 
   const expectResponseMatches = expected =>
     sinon.assert.calledWith(response.send, sinon.match(expected))
 
-  const expectResponseEquals = expected => 
+  const expectResponseEquals = expected =>
     sinon.assert.calledWith(response.send, expected)
 
   describe('checkouts', () => {
@@ -70,7 +70,7 @@ describe('checkout functionality', () => {
 
       postCheckout({}, response)
 
-      expectResponseEquals({ id: 1001, items: []})
+      expectResponseEquals({id: 1001, items: []})
       expect(response.status).toEqual(201)
     })
 
@@ -78,9 +78,9 @@ describe('checkout functionality', () => {
       const checkoutId = 1001
       addCheckout(checkoutId)
 
-      getCheckout({ params: { id: checkoutId }}, response)
+      getCheckout({params: {id: checkoutId}}, response)
 
-      expectResponseEquals({ id: checkoutId, items: [] })
+      expectResponseEquals({id: checkoutId, items: []})
     })
 
     it('returns created checkouts on get all', () => {
@@ -90,7 +90,7 @@ describe('checkout functionality', () => {
 
       getCheckouts({}, response)
 
-      expectResponseEquals([{ id: 1001, items: [] }, { id: 1002, items: [] }])
+      expectResponseEquals([{id: 1001, items: []}, {id: 1002, items: []}])
     })
   })
 
@@ -105,36 +105,36 @@ describe('checkout functionality', () => {
   describe('items', () => {
     const checkoutId = 1001
 
-    beforeEach(()=> {
+    beforeEach(() => {
       addCheckout(checkoutId)
     })
 
     it('returns created object on post', () => {
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', description: 'Milk', price: 3.33 }))
+      itemDatabaseRetrieveStub.callsFake(_ => ({upc: '333', description: 'Milk', price: 3.33}))
       Generator.reset(1002)
 
-      postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
+      postItem({params: {id: checkoutId}, body: {upc: '333'}}, response)
 
       expect(response.status).toEqual(201)
-      expectResponseEquals({ id: 1002, upc: '333', description: 'Milk', price: 3.33 })
+      expectResponseEquals({id: 1002, upc: '333', description: 'Milk', price: 3.33})
     })
 
     it('returns error when item UPC not found', () => {
       itemDatabaseRetrieveStub.callsFake(_ => undefined)
 
-      postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
+      postItem({params: {id: checkoutId}, body: {upc: '333'}}, response)
 
       expect(response.status).toEqual(400)
-      expectResponseEquals({ error: 'unrecognized UPC code' })
+      expectResponseEquals({error: 'unrecognized UPC code'})
     })
 
     it('returns error when checkout not found', () => {
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', description: '', price: 0.00 }))
+      itemDatabaseRetrieveStub.callsFake(_ => ({upc: '333', description: '', price: 0.00}))
 
-      postItem({ params: { id: -1 }, body: { upc: '333' } }, response)
+      postItem({params: {id: -1}, body: {upc: '333'}}, response)
 
       expect(response.status).toEqual(400)
-      expectResponseEquals({ error: 'nonexistent checkout' })
+      expectResponseEquals({error: 'nonexistent checkout'})
     })
   })
 
@@ -149,88 +149,90 @@ describe('checkout functionality', () => {
 
 
     it('attaches member information to checkout', () => {
-      memberDatabaseRetrieveStub.callsFake(_ => ({ member: '719-287-4335', discount: 0.01, name: 'Jeff Languid' }))
-      postMember({ params: { id: checkoutId }, body: { id: '719-287-4335' }}, response)
+      memberDatabaseRetrieveStub.callsFake(_ => ({member: '719-287-4335', discount: 0.01, name: 'Jeff Languid'}))
+      postMember({params: {id: checkoutId}, body: {id: '719-287-4335'}}, response)
       sendSpy.resetHistory()
 
-      getCheckout({params: { id: checkoutId }}, response)
+      getCheckout({params: {id: checkoutId}}, response)
 
-      expectResponseMatches({ member: '719-287-4335', discount: 0.01, name: 'Jeff Languid' })
+      expectResponseMatches({member: '719-287-4335', discount: 0.01, name: 'Jeff Languid'})
     })
 
     it('returns error when checkout not found', () => {
-      postMember({ params: { id: checkoutId }, body: { id: 'unknown' }}, response)
+      postMember({params: {id: checkoutId}, body: {id: 'unknown'}}, response)
 
       expect(response.status).toEqual(400)
-      expectResponseEquals({ error: 'unrecognized member' })
+      expectResponseEquals({error: 'unrecognized member'})
     })
 
     it('returns error when member not found', () => {
       memberDatabaseRetrieveStub.callsFake(_ => undefined)
 
-      postMember({ params: { id: checkoutId }, body: { id: 'anything' }}, response)
+      postMember({params: {id: checkoutId}, body: {id: 'anything'}}, response)
 
       expect(response.status).toEqual(400)
-      expectResponseEquals({ error: 'unrecognized member' })
+      expectResponseEquals({error: 'unrecognized member'})
     })
   })
 
-  describe('checkout total', () => {
-    it('does stuff', () => {
+  const createItem = (upc, price) => {
+    itemDatabaseRetrieveStub.callsFake(_ => ({upc: upc, price: price, description: '', exempt: false}))
+    postItem({params: {id: checkoutId}, body: {upc}}, response)
+  }
+
+  describe('given a checkout', () => {
+    beforeEach(() => {
       Generator.reset(checkoutId)
       postCheckout({}, response)
       sendSpy.resetHistory()
-      // set up for discountng
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', price: 3.33, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
-      sendSpy.resetHistory()
-      console.log('req id', checkoutId )
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '444', price: 4.44, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '444' } }, response)
-      sendSpy.resetHistory()
-      const request = { params: { id: checkoutId }}
-      postCheckoutTotal(request, response)
-      expect(response.status).toEqual(200)
-      console.log('reseponse status', response.status)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ total: 7.77 })))
+    })
 
-      //  not found
-      postCheckoutTotal({ params: { id: 'unknown' }}, response)
+    describe('when we scan items and request a total', () => {
+      beforeEach(() => {
+        createItem('333', 3)
+        createItem('444', 4)
+        postCheckoutTotal({params: {id: checkoutId}}, response)
+      })
+
+      it('returns a success response', () => {
+        expect(response.status).toEqual(200)
+      })
+
+      it('totals items posted', () => {
+        expectResponseMatches({ total: 7 })
+      })
+    })
+
+
+    it('responds with error if checkout id is unknown', () => {
+      postCheckoutTotal({params: {id: 'unknown'}}, response)
+
       expect(response.status).toEqual(400)
-      sinon.assert.calledWith(response.send, { error: 'nonexistent checkout' })
+      sinon.assert.calledWith(response.send, {error: 'nonexistent checkout'})
     })
 
     it('applies any member discount', () => {
-      Generator.reset(checkoutId)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       scanMember('719-287-4335', 0.25)
       purchase('333', 3.33)
       purchase('444', 4.44)
-      postCheckoutTotal({ params: { id: checkoutId }}, response)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ total: 5.83 })))
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+      expect(sinon.assert.calledWith(response.send, sinon.match({total: 5.83})))
     })
 
     it('3rd disc test', () => {
-      Generator.reset(1001)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       scanMember('719-287-4335', 0.085)
       purchase('333', 4.40)
       purchaseExemptItem('444', 5.50)
-      postCheckoutTotal({ params: { id: checkoutId }}, response)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ total: 9.53 })))
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+      expect(sinon.assert.calledWith(response.send, sinon.match({total: 9.53})))
     })
 
     it('discd tots', () => {
-      Generator.reset(1001)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       purchaseExemptItem('444', 6.00)
       scanMember('719-287-4335', 0.10)
       purchase('333', 4.00)
-      postCheckoutTotal({ params: { id: checkoutId }}, response)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ totalOfDiscountedItems:  3.60 })))
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+      expect(sinon.assert.calledWith(response.send, sinon.match({totalOfDiscountedItems: 3.60})))
       sendSpy.resetHistory()
 
       // amount saved
@@ -240,8 +242,8 @@ describe('checkout functionality', () => {
       scanMember('719-287-4335', 0.10)
       purchase('333', 4.00)
       purchase('444', 6.00)
-      postCheckoutTotal({ params: { id: checkoutId }}, response)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ /* totalOfDiscountedItems*/totalSaved:  1.00 })))
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+      expect(sinon.assert.calledWith(response.send, sinon.match({ /* totalOfDiscountedItems*/totalSaved: 1.00})))
     })
 
     it('provides 0 total for discounted items when no member scanned', () => {
@@ -249,8 +251,8 @@ describe('checkout functionality', () => {
       postCheckout({}, response)
       sendSpy.resetHistory()
       purchase('333', 4.00)
-      postCheckoutTotal({ params: { id: checkoutId }}, response)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ totalOfDiscountedItems :   0.00 })))
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+      expect(sinon.assert.calledWith(response.send, sinon.match({totalOfDiscountedItems: 0.00})))
     })
 
     it('provides 0 total for discounted items when member discount is 0', () => {
@@ -262,8 +264,8 @@ describe('checkout functionality', () => {
 
       purchase('333', 4.00)
 
-      postCheckoutTotal({ params: { id: checkoutId }}, response)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ totalOfDiscountedItems :   0.00 })))
+      postCheckoutTotal({params: {id: checkoutId}}, response)
+      expect(sinon.assert.calledWith(response.send, sinon.match({totalOfDiscountedItems: 0.00})))
     })
   })
 
@@ -274,12 +276,14 @@ describe('checkout functionality', () => {
       purchase('123', 5.00, 'Milk')
       purchase('555', 12.00, 'Fancy eggs')
 
-      postCheckoutTotal({ params: { id: checkoutId } }, response)
+      postCheckoutTotal({params: {id: checkoutId}}, response)
 
       expectResponseMatches(
-        { messages: ['Milk                                     5.00',
-          'Fancy eggs                              12.00',
-          'TOTAL                                   17.00' ]})
+        {
+          messages: ['Milk                                     5.00',
+            'Fancy eggs                              12.00',
+            'TOTAL                                   17.00']
+        })
     })
 
     it('includes discounts and total saved', () => {
@@ -287,15 +291,17 @@ describe('checkout functionality', () => {
       purchase('123', 5.00, 'Milk')
       purchase('555', 2.79, 'Eggs')
 
-      postCheckoutTotal({ params: { id: checkoutId } }, response)
+      postCheckoutTotal({params: {id: checkoutId}}, response)
 
       expectResponseMatches(
-        { messages: ['Milk                                     5.00',
-          '   10% mbr disc                         -0.50',
-          'Eggs                                     2.79',
-          '   10% mbr disc                         -0.28',
-          'TOTAL                                    7.01',
-          '*** You saved:                           0.78' ] })
+        {
+          messages: ['Milk                                     5.00',
+            '   10% mbr disc                         -0.50',
+            'Eggs                                     2.79',
+            '   10% mbr disc                         -0.28',
+            'TOTAL                                    7.01',
+            '*** You saved:                           0.78']
+        })
     })
   })
 })
