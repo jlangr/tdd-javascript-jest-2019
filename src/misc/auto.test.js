@@ -80,11 +80,11 @@ describe('sinon', () => {
       expect(result).toEqual(115)
     })
 
-    xit('throws when currentTemperature not stubbed', () => {
-      expect(() => {
-        console.log('ct: ', new TemperatureService().currentTemperature('Phoenix'))
-      }).toThrow()
-    })
+    // it('throws when currentTemperature not stubbed', () => {
+    //   expect(() => {
+    //     //console.log('ct: ', new TemperatureService().currentTemperature('Phoenix'))
+    //   }).toThrow()
+    // })
   })
 
   const funcReturningPromise = () => 
