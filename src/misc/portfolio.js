@@ -1,3 +1,10 @@
+import { nasdaqStockLookup } from './NasdaqStockService'
+
+export const value = (portfolio, stockLookupService=nasdaqStockLookup) =>
+  Object.entries(portfolio.holdings).reduce(
+    (total, [symbol, shares]) => total + stockLookupService(symbol) * shares,
+    0)
+
 export const create = () => ({ holdings: {} })
 
 export const isEmpty = portfolio => uniqueSymbolCount(portfolio) === 0
@@ -18,10 +25,11 @@ const transact = (portfolio, symbol, shares) => {
 
 export const buy = (portfolio, symbol, shares) => transact(portfolio, symbol, shares)
 
-export const sell = (portfolio, symbol, shares) => {
+export const sell = (portfolio, symbol, shares, auditor=()=>{}) => {
   throwWhenSellingTooMany(portfolio, symbol, shares)
   let updatedPortfolio = transact(portfolio, symbol, -1 * shares)
   updatedPortfolio = removeIfAllSold(updatedPortfolio, symbol)
+  auditor(`sold ${symbol}`, shares, Date.now())
   return updatedPortfolio
 }
 
