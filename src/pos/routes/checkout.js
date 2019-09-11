@@ -1,167 +1,178 @@
-import Generator from '../data/id-generator';
-import ItemDatabase from '../data/item_database';
-import MemberDatabase from '../data/member_database';
+import Generator from '../data/id-generator'
+import ItemDatabase from '../data/item_database'
+import MemberDatabase from '../data/member_database'
 
-const checkouts = {};
+const checkouts = {}
 
-const itemDatabase = new ItemDatabase();
-const memberDatabase = new MemberDatabase();
+const itemDatabase = new ItemDatabase()
+const memberDatabase = new MemberDatabase()
+
+const retrieveCheckoutById = checkoutId => checkouts[checkoutId]
 
 export const clearAllCheckouts = (_, __) => {
-  for (var member in checkouts) delete checkouts[member];
-};
+  for (var member in checkouts) delete checkouts[member]
+}
 
 export const getCheckout = (request, response) => {
-  const checkout = checkouts[request.params.id];
-  return response.send(checkout);
-};
+  const checkout = checkouts[request.params.id]
+  return response.send(checkout)
+}
 
 export const getCheckouts = (_, response) => {
-  return response.send(Object.values(checkouts));
-};
+  return response.send(Object.values(checkouts))
+}
 
 export const postCheckout = (_, response) => {
-  const newCheckout = { id: Generator.id(), items: [] };
-  checkouts[newCheckout.id] = newCheckout;
-  response.status = 201;
-  response.send(newCheckout);
-};
+  const newCheckout = { id: Generator.id(), items: [] }
+  checkouts[newCheckout.id] = newCheckout
+  response.status = 201
+  response.send(newCheckout)
+}
 
 export const getItems = (request, response) => {
-  const id = request.params.id;
-  const checkout = checkouts[id];
-  response.send(checkout.items);
-};
+  const id = request.params.id
+  const checkout = checkouts[id]
+  response.send(checkout.items)
+}
 
 export const postMember = (request, response) => {
-  const body = request.body;
-  const member = memberDatabase.retrieve(body.id);
+  const body = request.body
+  const member = memberDatabase.retrieve(body.id)
   if (!member) {
-    response.status = 400;
-    response.send({error: 'unrecognized member'});
-    return;
+    response.status = 400
+    response.send({error: 'unrecognized member'})
+    return
   }
 
-  const checkoutId = request.params.id;
+  const checkoutId = request.params.id
 
-  const checkout = checkouts[checkoutId];
+  const checkout = checkouts[checkoutId]
   if (!checkout) {
-    response.status = 400;
-    response.send({error: 'invalid checkout'});
-    return;
+    response.status = 400
+    response.send({error: 'invalid checkout'})
+    return
   }
-  Object.assign(checkout, member);
+  Object.assign(checkout, member)
 
-  response.status = 200;
-  response.send(checkouts[checkoutId]);
-};
+  response.status = 200
+  response.send(checkouts[checkoutId])
+}
 
 export const postItem = (request, response) => {
-  const body = request.body;
-  const checkoutId = request.params.id;
-  const newCheckoutItem = { id: Generator.id() };
-  const item = itemDatabase.retrieve(body.upc);
+  const body = request.body
+  const checkoutId = request.params.id
+  const newCheckoutItem = { id: Generator.id() }
+  const item = itemDatabase.retrieve(body.upc)
   if (!item) {
-    response.status = 400;
-    response.send({error: 'unrecognized UPC code'});
-    return;
+    response.status = 400
+    response.send({error: 'unrecognized UPC code'})
+    return
   }
 
-  Object.assign(newCheckoutItem, item);
+  Object.assign(newCheckoutItem, item)
 
-  const checkout = checkouts[checkoutId];
+  const checkout = checkouts[checkoutId]
   if (!checkout) {
-    response.status = 400;
-    response.send({error: 'nonexistent checkout'});
-    return;
+    response.status = 400
+    response.send({error: 'nonexistent checkout'})
+    return
   }
 
-  checkout.items.push(newCheckoutItem);
+  checkout.items.push(newCheckoutItem)
 
-  response.status = 201;
-  response.send(newCheckoutItem);
-};
+  response.status = 201
+  response.send(newCheckoutItem)
+}
 
-const pad = (s, length) => s + ' '.repeat(length - s.length);
+const pad = (s, length) => s + ' '.repeat(length - s.length)
 
-const LineWidth = 45;
+const LineWidth = 45
 
-export const postCheckoutTotal = (request, response) => {
-  const checkoutId = request.params.id;
-  const checkout = checkouts[checkoutId];
-  if (!checkout) {
-    response.status = 400;
-    response.send({error: 'nonexistent checkout'});
-    return;
-  }
+const sendError = function (response, errorMessage) {
+  response.status = 400
+  response.send({error: errorMessage})
+}
 
-  const messages = [];
-  const discount = checkout.member ? checkout.discount : 0;
+const round2 = function (totalOfDiscountedItems) {
+  return Math.round(totalOfDiscountedItems * 100) / 100
+}
 
-  let totalOfDiscountedItems = 0;
-  let total = 0;
-  let totalSaved = 0;
+const discountForCheckout = checkout => checkout.member ? checkout.discount : 0
+
+const createLineItem = function (lineAmount, lineText) {
+  const amount = parseFloat(round2(lineAmount)).toFixed(2)
+  const amountWidth = amount.length
+  const textWidth = LineWidth - amountWidth
+  return pad(lineText, textWidth) + amount
+}
+
+const shouldBeDiscounted = (checkout, item) =>
+  !item.exempt && discountForCheckout(checkout) > 0
+
+const sendSuccessResponse = (response, responseBody) => {
+  response.status = 200
+  response.send(responseBody)
+}
+
+const discountAmount = (checkout, item) => discountForCheckout(checkout) * item.price
+
+const discountedPrice = (checkout, item) => item.price * (1.0 - discountForCheckout(checkout))
+
+const calculateTotal = checkout => {
+  let total = 0
+  checkout.items.forEach(item => {
+    if (shouldBeDiscounted(checkout, item))
+      total += discountedPrice(checkout, item)
+    else
+      total += item.price
+  })
+  return total
+}
+
+const calculateTotalSaved = checkout =>
+  checkout.items
+    .filter(item => shouldBeDiscounted(checkout, item))
+    .reduce((total, item) => total + discountAmount(checkout, item), 0)
+
+const calculateTotalOfDiscountedItems = checkout =>
+  checkout.items
+    .filter(item => shouldBeDiscounted(checkout, item))
+    .reduce((total, item) => total + discountedPrice(checkout, item), 0)
+
+const createReceiptMessages = (checkout, totals) => {
+  const messages = []
 
   checkout.items.forEach(item => {
-    let price = item.price;
-    const isExempt = item.exempt;
-    if (!isExempt && discount > 0) {
-      const discountAmount = discount * price;
-      const discountedPrice = price * (1.0 - discount);
-
-      // add into total
-      totalOfDiscountedItems += discountedPrice;
-
-      let text = item.description;
-      // format percent
-      const amount = parseFloat(Math.round(price * 100) / 100).toFixed(2);
-      const amountWidth = amount.length;
-
-      let textWidth = LineWidth - amountWidth;
-      messages.push(pad(text, textWidth) + amount);
-
-      total += discountedPrice;
-
-      // discount line
-      const discountFormatted = '-' + parseFloat(Math.round(discountAmount * 100) / 100).toFixed(2);
-      textWidth = LineWidth - discountFormatted.length;
-      text = `   ${discount * 100}% mbr disc`;
-      messages.push(`${pad(text, textWidth)}${discountFormatted}`);
-
-      totalSaved += discountAmount;
+    messages.push(createLineItem(item.price, item.description))
+    if (shouldBeDiscounted(checkout, item)) {
+      messages.push(createLineItem(-discountAmount(checkout, item), `   ${discountForCheckout(checkout) * 100}% mbr disc`))
     }
-    else {
-      total += price;
-      const text = item.description;
-      const amount = parseFloat(Math.round(price * 100) / 100).toFixed(2);
-      const amountWidth = amount.length;
+  })
 
-      const textWidth = LineWidth - amountWidth;
-      messages.push(pad(text, textWidth) + amount);
-    }
-  });
+  messages.push(createLineItem(totals.total, 'TOTAL'))
+  if (calculateTotalSaved(checkout) > 0)
+    messages.push(createLineItem(totals.totalSaved, '*** You saved:'))
 
-  total = Math.round(total * 100) / 100;
+  return messages
+}
 
-  // append total line
-  const formattedTotal = parseFloat(Math.round(total * 100) / 100).toFixed(2);
-  const formattedTotalWidth = formattedTotal.length;
-  const textWidth = LineWidth - formattedTotalWidth;
-  messages.push(pad('TOTAL', textWidth) + formattedTotal);
-
-  if (totalSaved > 0) {
-    const formattedTotal = parseFloat(Math.round(totalSaved * 100) / 100).toFixed(2);
-    console.log(`formattedTotal: ${formattedTotal}`);
-    const formattedTotalWidth = formattedTotal.length;
-    const textWidth = LineWidth - formattedTotalWidth;
-    messages.push(pad('*** You saved:', textWidth) + formattedTotal);
+const createResponseBody = checkout => {
+  const totals = {
+    total: round2(calculateTotal(checkout)),
+    totalOfDiscountedItems: round2(calculateTotalOfDiscountedItems(checkout)),
+    totalSaved: round2(calculateTotalSaved(checkout))
   }
 
-  totalOfDiscountedItems = Math.round(totalOfDiscountedItems * 100) / 100;
+  const messages = createReceiptMessages(checkout, totals)
 
-  totalSaved = Math.round(totalSaved * 100) / 100;
+  return Object.assign({id: checkout.id, messages}, totals)
+}
 
-  response.status = 200;
-  // send total saved instead
-  response.send({ id: checkoutId, total, totalOfDiscountedItems, messages, totalSaved });
-};
+
+export const postCheckoutTotal = (request, response) => {
+  const checkout = retrieveCheckoutById(request.params.id)
+  if (!checkout)
+    return sendError(response, 'nonexistent checkout')
+
+  sendSuccessResponse(response, createResponseBody(checkout))
+}

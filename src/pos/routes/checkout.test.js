@@ -1,5 +1,5 @@
 import sinon from 'sinon'
-import { 
+import {
   clearAllCheckouts,
   getCheckout,
   getCheckouts,
@@ -176,34 +176,57 @@ describe('checkout functionality', () => {
   })
 
   describe('checkout total', () => {
-    it('does stuff', () => {
+    beforeEach(() => {
       Generator.reset(checkoutId)
       postCheckout({}, response)
-      sendSpy.resetHistory()
-      // set up for discountng
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '333', price: 3.33, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '333' } }, response)
-      sendSpy.resetHistory()
-      console.log('req id', checkoutId )
-      itemDatabaseRetrieveStub.callsFake(_ => ({ upc: '444', price: 4.44, description: '', exempt: false }))
-      postItem({ params: { id: checkoutId }, body: { upc: '444' } }, response)
-      sendSpy.resetHistory()
-      const request = { params: { id: checkoutId }}
-      postCheckoutTotal(request, response)
-      expect(response.status).toEqual(200)
-      console.log('reseponse status', response.status)
-      expect(sinon.assert.calledWith(response.send, sinon.match({ total: 7.77 })))
+      // sendSpy.resetHistory()
+    })
 
-      //  not found
-      postCheckoutTotal({ params: { id: 'unknown' }}, response)
-      expect(response.status).toEqual(400)
-      sinon.assert.calledWith(response.send, { error: 'nonexistent checkout' })
+    const scanItemWithPrice = (upc, price) => {
+      itemDatabaseRetrieveStub.callsFake(_ => ({ upc, price, description: '', exempt: false }))
+      postItem({ params: {id: checkoutId}, body: { upc } }, response)
+      // sendSpy.resetHistory()
+    }
+
+    describe('when two items are posted', () => {
+      beforeEach(() => {
+        scanItemWithPrice('333', 3)
+        scanItemWithPrice('444', 4)
+
+        postCheckoutTotal({params: {id: checkoutId}}, response)
+      })
+
+      it('returns success status code', () => {
+        expect(response.status).toEqual(200)
+      })
+
+      it('returns checkout total in response', () => {
+        expectResponseMatches({ total: 7 })
+      })
+    })
+
+    describe('when unknown checkout ID posted', () => {
+      beforeEach(() => {
+        postCheckoutTotal({ params: { id: 'unknown' }}, response)
+      })
+
+      it('returns an invalid request status', () => {
+        expect(response.status).toEqual(400)
+      })
+
+      it('returns an error response', () => {
+        expectResponseEquals({ error: 'nonexistent checkout' })
+      })
+    })
+  })
+
+  describe('more checkout stuff', () => {
+    beforeEach(() => {
+      Generator.reset(checkoutId)
+      postCheckout({}, response)
     })
 
     it('applies any member discount', () => {
-      Generator.reset(checkoutId)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       scanMember('719-287-4335', 0.25)
       purchase('333', 3.33)
       purchase('444', 4.44)
@@ -212,9 +235,6 @@ describe('checkout functionality', () => {
     })
 
     it('3rd disc test', () => {
-      Generator.reset(1001)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       scanMember('719-287-4335', 0.085)
       purchase('333', 4.40)
       purchaseExemptItem('444', 5.50)
@@ -223,9 +243,6 @@ describe('checkout functionality', () => {
     })
 
     it('discd tots', () => {
-      Generator.reset(1001)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       purchaseExemptItem('444', 6.00)
       scanMember('719-287-4335', 0.10)
       purchase('333', 4.00)
@@ -245,18 +262,12 @@ describe('checkout functionality', () => {
     })
 
     it('provides 0 total for discounted items when no member scanned', () => {
-      Generator.reset(1001)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       purchase('333', 4.00)
       postCheckoutTotal({ params: { id: checkoutId }}, response)
       expect(sinon.assert.calledWith(response.send, sinon.match({ totalOfDiscountedItems :   0.00 })))
     })
 
     it('provides 0 total for discounted items when member discount is 0', () => {
-      Generator.reset(1001)
-      postCheckout({}, response)
-      sendSpy.resetHistory()
       scanMember('719-287-4335', 0.00)
       // addCheckout(checkoutId)
 
@@ -296,6 +307,51 @@ describe('checkout functionality', () => {
           '   10% mbr disc                         -0.28',
           'TOTAL                                    7.01',
           '*** You saved:                           0.78' ] })
+    })
+  })
+
+  const scanItemWithPrice = (upc, price) => {
+    itemDatabaseRetrieveStub.callsFake(_ => ({ upc, price, description: '', exempt: false }))
+    postItem({ params: {id: checkoutId}, body: { upc } }, response)
+  }
+
+  describe('checkout totaling', () => {
+    describe('given a checkout with two scanned items', () => {
+      beforeEach(() => {
+        Generator.reset(checkoutId)
+        postCheckout({}, response)
+
+        scanItemWithPrice('333', 3)
+        scanItemWithPrice('444', 4)
+      })
+
+      describe('when the checkout total is requested', () => {
+        beforeEach(() => {
+          postCheckoutTotal({params: {id: checkoutId}}, response)
+        })
+
+        it('returns success status code', () => {
+          expect(response.status).toEqual(200)
+        })
+
+        it('returns checkout total in response', () => {
+          expectResponseMatches({ total: 7 })
+        })
+      })
+    })
+
+    describe('when unknown checkout ID posted', () => {
+      beforeEach(() => {
+        postCheckoutTotal({ params: { id: 'unknown' }}, response)
+      })
+
+      it('returns an invalid request status', () => {
+        expect(response.status).toEqual(400)
+      })
+
+      it('returns an error response', () => {
+        expectResponseEquals({ error: 'nonexistent checkout' })
+      })
     })
   })
 })

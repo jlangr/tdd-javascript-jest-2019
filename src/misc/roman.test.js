@@ -1,0 +1,26 @@
+import { convert } from './roman'
+
+describe('a converter', () => {
+  it('converts', () => {
+    expect(convert(1)).toEqual('I')
+    expect(convert(2)).toEqual('II')
+    expect(convert(3)).toEqual('III')
+    expect(convert(4)).toEqual('IV')
+    expect(convert(5)).toEqual('V')
+    expect(convert(9)).toEqual('IX')
+    expect(convert(10)).toEqual('X')
+    expect(convert(20)).toEqual('XX')
+    expect(convert(21)).toEqual('XXI')
+    expect(convert(50)).toEqual('L')
+    expect(convert(90)).toEqual('XC')
+    expect(convert(100)).toEqual('C')
+    expect(convert(400)).toEqual('CD')
+    expect(convert(500)).toEqual('D')
+    expect(convert(900)).toEqual('CM')
+    expect(convert(1000)).toEqual('M')
+    expect(convert(123)).toEqual('CXXIII')
+    expect(convert(1923)).toEqual('MCMXXIII')
+    expect(convert(3954)).toEqual('MMMCMLIV')
+    expect(convert(4000)).toEqual('MMMM')
+  })
+})
