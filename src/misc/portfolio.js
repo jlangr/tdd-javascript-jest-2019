@@ -1,5 +1,15 @@
 import * as Util from '../util/jsutil'
 
+export const value = (portfolio, stockService) => {
+  if (isEmpty(portfolio))
+    return 0
+
+  return Object.entries(portfolio.holdings)
+    .reduce((total, [symbol, shares]) =>
+      total + stockService(symbol) * shares
+    , 0)
+}
+
 export const create = () => ({ holdings: {} })
 
 export const isEmpty = portfolio => symbolCount(portfolio) === 0

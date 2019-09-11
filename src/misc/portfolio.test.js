@@ -92,4 +92,41 @@ describe('a portfolio', () => {
     expect(() => Portfolio.sell(
       newPortfolio, 'BAYN', 42 + 1)).toThrow(RangeError)
   })
+
+  it('is worthless when created', () => {
+    expect(Portfolio.value(portfolio)).toEqual(0)
+  })
+
+  const BAYN_CURRENT_VALUE = 20
+  const IBM_CURRENT_VALUE = 200
+
+  it('has value of current price for single share purchase', () => {
+    const stubService = () => BAYN_CURRENT_VALUE
+    let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 1)
+
+    const value = Portfolio.value(newPortfolio, stubService)
+
+    expect(value).toEqual(BAYN_CURRENT_VALUE)
+  })
+
+  it('multiplies shares by price', () => {
+    const stubService = () => BAYN_CURRENT_VALUE
+    let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 42)
+
+    const value = Portfolio.value(newPortfolio, stubService)
+
+    expect(value).toEqual(BAYN_CURRENT_VALUE * 42)
+  })
+
+  it('sums values for all symbols', () => {
+    const stubService = symbol =>
+      symbol === 'BAYN' ? BAYN_CURRENT_VALUE : IBM_CURRENT_VALUE
+    let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
+    newPortfolio = Portfolio.purchase(newPortfolio, 'IBM', 15)
+
+    const value = Portfolio.value(newPortfolio, stubService)
+
+    expect(value).toEqual(
+      BAYN_CURRENT_VALUE * 10 + IBM_CURRENT_VALUE * 15)
+  })
 })
