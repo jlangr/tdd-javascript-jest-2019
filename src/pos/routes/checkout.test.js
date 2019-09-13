@@ -122,30 +122,30 @@ describe('checkout routes', () => {
     })
   })
 
+  const purchaseItem = (upc, price, description, exempt = false) => {
+    overrideRetrieveItem(upc => ({ upc, price, description, exempt }))
+    const response = createEmptyResponse()
+    postItem({ params: { id: checkoutId }, body: { upc } }, response)
+  }
+
+  const purchaseExemptItem = (upc, price, description='') => {
+    purchaseItem(upc, price, description, true)
+  }
+
+  const purchase = (upc, price, description='') => {
+    purchaseItem(upc, price, description, false)
+  }
+
+  const scanMember = (id, discount, name = 'Jeff Languid') => {
+    overrideRetrieveMember(() => ({ member: id, discount, name }))
+    const response = createEmptyResponse()
+    postMember({ params: { id: checkoutId }, body: { id }}, response)
+  }
+
   describe('checkout total', () => {
     beforeEach(() => {
       response = createEmptyResponse()
     })
-
-    const purchaseItem = (upc, price, description, exempt = false) => {
-      overrideRetrieveItem(upc => ({ upc, price, description, exempt }))
-      const response = createEmptyResponse()
-      postItem({ params: { id: checkoutId }, body: { upc } }, response)
-    }
-
-    const purchaseExemptItem = (upc, price, description='') => {
-      purchaseItem(upc, price, description, true)
-    }
-
-    const purchase = (upc, price, description='') => {
-      purchaseItem(upc, price, description, false)
-    }
-
-    const scanMember = (id, discount, name = 'Jeff Languid') => {
-      overrideRetrieveMember(() => ({ member: id, discount, name }))
-      const response = createEmptyResponse()
-      postMember({ params: { id: checkoutId }, body: { id }}, response)
-    }
 
     it('does stuff', () => {
       IncrementingIdGenerator.reset(checkoutId)
@@ -232,38 +232,37 @@ describe('checkout routes', () => {
     })
   })
 
-
-  // In Progress
   describe('message lines', () => {
-    // beforeEach(() => addCheckout(checkoutId))
+    beforeEach(() => {
+      response = createEmptyResponse()
+    })
 
-    // it('includes items and total', () => {
-    //   purchase('123', 5.00, 'Milk')
-    //   purchase('555', 12.00, 'Fancy eggs')
-    //
-    //   postCheckoutTotal({ params: { id: checkoutId } }, response)
-    //
-    //   expectResponseMatches(
-    //     { messages: ['Milk                                     5.00',
-    //         'Fancy eggs                              12.00',
-    //         'TOTAL                                   17.00' ]})
-    // })
-    //
-    // it('includes discounts and total saved', () => {
-    //   scanMember('719-287-4335', 0.10)
-    //   purchase('123', 5.00, 'Milk')
-    //   purchase('555', 2.79, 'Eggs')
-    //
-    //   postCheckoutTotal({ params: { id: checkoutId } }, response)
-    //
-    //   expectResponseMatches(
-    //     { messages: ['Milk                                     5.00',
-    //         '   10% mbr disc                         -0.50',
-    //         'Eggs                                     2.79',
-    //         '   10% mbr disc                         -0.28',
-    //         'TOTAL                                    7.01',
-    //         '*** You saved:                           0.78' ] })
-    // })
+    it('includes items and total', () => {
+      purchase('123', 5.00, 'Milk')
+      purchase('555', 12.00, 'Fancy eggs')
+
+      postCheckoutTotal({ params: { id: checkoutId } }, response)
+
+      expectResponseSentToMatch(response, { messages:
+          ['Milk                                     5.00',
+            'Fancy eggs                              12.00',
+            'TOTAL                                   17.00' ]})
+    })
+
+    it('includes discounts and total saved', () => {
+      scanMember('719-287-4335', 0.10)
+      purchase('123', 5.00, 'Milk')
+      purchase('555', 2.79, 'Eggs')
+
+      postCheckoutTotal({ params: { id: checkoutId } }, response)
+
+      expectResponseSentToMatch(response, { messages:
+          ['Milk                                     5.00',
+            '   10% mbr disc                         -0.50',
+            'Eggs                                     2.79',
+            '   10% mbr disc                         -0.28',
+            'TOTAL                                    7.01',
+            '*** You saved:                           0.78' ] })
+    })
   })
 })
-
