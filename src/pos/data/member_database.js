@@ -1,5 +1,2 @@
-export default class MemberDatabase {
-  retrieve(_id) {
-    return -1;
-  }
-}
+export let retrieveMember = _id => undefined
+export const overrideRetrieveMember = fn => retrieveMember = fn
