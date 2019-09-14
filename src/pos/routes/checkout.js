@@ -4,6 +4,18 @@ import { retrieveItem } from '../data/item_databasef'
 
 const checkouts = {}
 
+const pad = (s, length) => s + ' '.repeat(length - s.length)
+
+const sendRequestError = (response, message) => {
+  response.status = 400
+  response.send({error: message})
+}
+
+const sendResponse = (response, body, status = 200) => {
+  response.status = status
+  response.send(body)
+}
+
 export const clearAllCheckouts = (_, __) => {
   for (let member in checkouts) delete checkouts[member]
 }
@@ -33,24 +45,18 @@ export const getItems = (request, response) => {
 export const postMember = (request, response) => {
   const body = request.body
   const member = retrieveMember(body.id)
-  if (!member) {
-    response.status = 400
-    response.send({error: 'unrecognized member'})
-    return
-  }
+  if (!member)
+    return sendRequestError(response, 'unrecognized member')
 
   const checkoutId = request.params.id
 
   const checkout = checkouts[checkoutId]
-  if (!checkout) {
-    response.status = 400
-    response.send({error: 'invalid checkout'})
-    return
-  }
+  if (!checkout)
+    return sendRequestError(response, 'invalid checkout')
+
   Object.assign(checkout, member)
 
-  response.status = 200
-  response.send(checkouts[checkoutId])
+  sendResponse(response, checkouts[checkoutId])
 }
 
 export const postItem = (request, response) => {
@@ -58,28 +64,19 @@ export const postItem = (request, response) => {
   const checkoutId = request.params.id
   const newCheckoutItem = { id: IncrementingIdGenerator.id() }
   const item = retrieveItem(body.upc)
-  if (!item) {
-    response.status = 400
-    response.send({error: 'unrecognized UPC code'})
-    return
-  }
+  if (!item)
+    return sendRequestError(response, 'unrecognized UPC code')
 
   Object.assign(newCheckoutItem, item)
 
   const checkout = checkouts[checkoutId]
-  if (!checkout) {
-    response.status = 400
-    response.send({error: 'nonexistent checkout'})
-    return
-  }
+  if (!checkout)
+    return sendRequestError(response, 'nonexistent checkout')
 
   checkout.items.push(newCheckoutItem)
 
-  response.status = 201
-  response.send(newCheckoutItem)
+  sendResponse(response, newCheckoutItem, 201)
 }
-
-const pad = (s, length) => s + ' '.repeat(length - s.length)
 
 const LineWidth = 45
 
