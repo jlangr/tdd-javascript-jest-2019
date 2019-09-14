@@ -142,6 +142,20 @@ describe('checkout routes', () => {
     postMember({ params: { id: checkoutId }, body: { id }}, response)
   }
 
+  /*
+   * The tests below need some work.
+   *
+   * Things to emphasize:
+   * - AAA
+   * - Single behavior tests
+   * - "Self-contained reading"
+   * - Abstraction: Emphasize the essential, eliminate the irrelevant
+   *
+   * Some other things to look for:
+   * - Consistent names
+   * - Eliminate junk like console logging, comments
+   * - Duplication / stepwise presentation
+   */
   describe('checkout total', () => {
     beforeEach(() => {
       response = createEmptyResponse()

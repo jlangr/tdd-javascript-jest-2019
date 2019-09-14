@@ -5,7 +5,7 @@ import { retrieveItem } from '../data/item_databasef'
 const checkouts = {}
 
 export const clearAllCheckouts = (_, __) => {
-  for (var member in checkouts) delete checkouts[member]
+  for (let member in checkouts) delete checkouts[member]
 }
 
 export const getCheckout = (request, response) => {
