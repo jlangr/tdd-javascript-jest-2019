@@ -9,7 +9,7 @@ import {
 } from './checkout'
 
 import IncrementingIdGenerator from '../data/incrementing-id-generator'
-import { overrideRetrieveItem } from '../data/item_databasef'
+import { overrideRetrieveItem } from '../data/item_database'
 import { overrideRetrieveMember } from '../data/member_database'
 
 const createEmptyResponse = () => ({
@@ -99,6 +99,7 @@ describe('checkout routes', () => {
     it('updates checkout with member data', () => {
       overrideRetrieveMember(() => ({ member: '719-287-4335', discount: 0.01, name: 'Jeff Languid' }))
       postMember({ params: { id: checkoutId }, body: { id: '719-287-4335' }}, response)
+      response = createEmptyResponse()
 
       getCheckout({params: { id: checkoutId }}, response)
 
@@ -146,7 +147,7 @@ describe('checkout routes', () => {
    * The tests below need some work.
    *
    * Things to emphasize:
-   * - AAA
+   * - AAA. Once you get used to it, it's sorely missed.
    * - Single behavior tests
    * - "Self-contained reading"
    * - Abstraction: Emphasize the essential, eliminate the irrelevant
@@ -155,11 +156,11 @@ describe('checkout routes', () => {
    * - Consistent names
    * - Eliminate junk like console logging, comments
    * - Duplication / stepwise presentation
+   *
+   * Should the checkout totaling code even reside in checkouts.js?
    */
   describe('checkout total', () => {
-    beforeEach(() => {
-      response = createEmptyResponse()
-    })
+    beforeEach(() => response = createEmptyResponse())
 
     it('does stuff', () => {
       IncrementingIdGenerator.reset(checkoutId)
@@ -180,7 +181,6 @@ describe('checkout routes', () => {
       console.log('reseponse status', response.status)
       const firstCallFirstArg = response.send.mock.calls[0][0]
       expect(firstCallFirstArg).toMatchObject({ total: 7.77 })
-
       //  not found
       postCheckoutTotal({ params: { id: 'unknown' }}, response)
       expect(response.status).toEqual(400)
@@ -191,9 +191,7 @@ describe('checkout routes', () => {
       scanMember('719-287-4335', 0.25)
       purchase('333', 3.33)
       purchase('444', 4.44)
-
       postCheckoutTotal({ params: { id: checkoutId }}, response)
-
       expectResponseSentToMatch(response, { total: 5.83 })
     })
 
@@ -202,9 +200,7 @@ describe('checkout routes', () => {
       purchase('333', 4.40)
       purchaseExemptItem('444', 5.50)
       response = createEmptyResponse()
-
       postCheckoutTotal({ params: { id: checkoutId }}, response)
-
       expectResponseSentToMatch(response, { total: 9.53 })
     })
 
@@ -214,7 +210,6 @@ describe('checkout routes', () => {
       purchase('333', 4.00)
       postCheckoutTotal({ params: { id: checkoutId }}, response)
       expectResponseSentToMatch(response, { totalOfDiscountedItems:  3.60 })
-
       // amount saved
       IncrementingIdGenerator.reset(1001)
       postCheckout({}, response)
@@ -237,19 +232,17 @@ describe('checkout routes', () => {
       IncrementingIdGenerator.reset(1001)
       postCheckout({}, createEmptyResponse())
       scanMember('719-287-4335', 0.00)
-      // addCheckout(checkoutId)
-
       purchase('333', 4.00)
-
       postCheckoutTotal({ params: { id: checkoutId }}, response)
       expectResponseSentToMatch(response, { totalOfDiscountedItems :   0.00 })
     })
   })
 
+  // While the tests here are in reasonable shape, to what extent
+  // should we be verifying against formatted output?
+  // And do any such tests belong in the route module?
   describe('message lines', () => {
-    beforeEach(() => {
-      response = createEmptyResponse()
-    })
+    beforeEach(() => response = createEmptyResponse())
 
     it('includes items and total', () => {
       purchase('123', 5.00, 'Milk')
