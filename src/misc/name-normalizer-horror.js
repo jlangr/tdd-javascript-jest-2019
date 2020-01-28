@@ -1,4 +1,6 @@
-
+let hasThreeParts = function (name) {
+  return name.trim().split(' ').length > 3
+}
 /* normalize the name by breaking into its
    constituent parts so that it can be put
    into a list in alphabetical order */
@@ -26,12 +28,12 @@ export const normalizeName = (name) => {
   // exactly 3 parts
   if (name.trim().split(' ').length === 3) {
     const t = name.trim().split(' ');
-    return t[2] + ', ' + t[0] + ' ' + t[1].slice(0, 1) 
+    return t[2] + ', ' + t[0] + ' ' + t[1].slice(0, 1)
       + (t[1].length === 1 ? '' : '.')
       + (sx.length > 0 ? ',' + sx : '');
   }
   // less than 3 parts
-  else if (name.trim().split(' ').length > 3) {
+  else if (hasThreeParts(name)) {
     const t = name.trim().split(' ');
     let l = t.slice(-1)[0];
     console.log('L: ', l);

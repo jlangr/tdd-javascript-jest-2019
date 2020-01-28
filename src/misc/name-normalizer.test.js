@@ -9,6 +9,10 @@ describe('a name normalizer', () => {
     expect(normalize('Plato')).toEqual('Plato')
   })
 
+  it('returns single word name with suffix', () => {
+    expect(normalize('Madonna, Jr.')).toEqual('Madonna, Jr.')
+  })
+
   it('swaps first and last names', () => {
     expect(normalize('Haruki Murakami')).toEqual('Murakami, Haruki')
   })
