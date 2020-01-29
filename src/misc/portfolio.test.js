@@ -42,63 +42,47 @@ describe('a portfolio', () => {
       expect(Portfolio.symbolCount(newPortfolio)).toEqual(1)
     })
 
-
-// TODO: eliminate duplication in tests
-
     it('does not alter passed portfolio on purchase', () => {
+      expect(Portfolio.isEmpty(portfolio)).toBe(true)
       Portfolio.purchase(portfolio, 'BAYN', 1)
 
-      // expect(portfolio.holdings).toEqual({})
       expect(Portfolio.isEmpty(portfolio)).toBe(true)
     })
   })
 
   describe('share count', () => {
-    it('represents shares purchased', () => {
-      const newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 50)
+    it('answers same as purchased for symbol', () => {
+      const newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 42)
 
-      expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(50)
+      expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(42)
     })
 
-    it('is zero when never purchased', () => {
-      expect(Portfolio.sharesOf(Portfolio.create(), 'BAYN'))
-        .toEqual(0)
+    it('answers zero for symbol never purchased', () => {
+      expect(Portfolio.sharesOf(portfolio, 'BAYN')).toEqual(0)
     })
 
-    it('differs by symbol', () => {
-      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
-      newPortfolio = Portfolio.purchase(newPortfolio, 'IBM', 5)
-
-      expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(10)
-    })
-
-    it('accumulates on multiple purchases', () => {
-      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 20)
-      newPortfolio = Portfolio.purchase(newPortfolio, 'BAYN', 22)
+    it('answers appropriate shares by symbol', () => {
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 42)
+      newPortfolio = Portfolio.purchase(newPortfolio, 'IBM', 14)
 
       expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(42)
     })
   })
 
-  describe('when selling', () => {
-    it('reduces share count', () => {
-      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 20)
-
-      newPortfolio = Portfolio.sell(newPortfolio, 'BAYN', 3)
-
-      expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(17)
+  describe('value', () => {
+    it('is worthless when empty', () => {
+      expect(Portfolio.value(portfolio)).toEqual(0)
     })
 
-    it('results in empty portfolio when selling everything', () => {
-      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 5)
+    const BayerCurrentValue = 20.69
 
-      newPortfolio = Portfolio.sell(newPortfolio, 'BAYN', 5)
+    it('is worth share price for single-share purchase', () => {
+      const stockLookupService = () => BayerCurrentValue
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 1)
 
-      expect(Portfolio.isEmpty(newPortfolio)).toBe(true)
-    })
+      const value = Portfolio.value(newPortfolio, stockLookupService)
 
-    it('throws when selling too many', () => {
-      expect(() => Portfolio.sell(portfolio, 'BAYN', 1)).toThrow(RangeError)
+      expect(value).toEqual(BayerCurrentValue)
     })
   })
 })
