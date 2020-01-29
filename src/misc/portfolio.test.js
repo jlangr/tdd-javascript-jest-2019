@@ -5,6 +5,11 @@ describe('a portfolio', () => {
 
   beforeEach(() => {
     portfolio = Portfolio.create()
+    expect(Portfolio.isEmpty(portfolio)).toBe(true)
+  })
+
+  afterEach(() => {
+    expect(Portfolio.isEmpty(portfolio)).toBe(true)
   })
 
   it('is empty when no purchases', () => {
@@ -41,13 +46,6 @@ describe('a portfolio', () => {
 
       expect(Portfolio.symbolCount(newPortfolio)).toEqual(1)
     })
-
-    it('does not alter passed portfolio on purchase', () => {
-      expect(Portfolio.isEmpty(portfolio)).toBe(true)
-      Portfolio.purchase(portfolio, 'BAYN', 1)
-
-      expect(Portfolio.isEmpty(portfolio)).toBe(true)
-    })
   })
 
   describe('share count', () => {
@@ -75,14 +73,36 @@ describe('a portfolio', () => {
     })
 
     const BayerCurrentValue = 20.69
+    const IbmCurrentValue = 100
+
+    const stockLookupService = symbol =>
+      symbol === 'BAYN' ? BayerCurrentValue : IbmCurrentValue
 
     it('is worth share price for single-share purchase', () => {
-      const stockLookupService = () => BayerCurrentValue
       let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 1)
 
       const value = Portfolio.value(newPortfolio, stockLookupService)
 
       expect(value).toEqual(BayerCurrentValue)
+    })
+
+    it('multiples price by share count', () => {
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
+
+      const value = Portfolio.value(newPortfolio, stockLookupService)
+
+      expect(value).toEqual(BayerCurrentValue * 10)
+    })
+
+    it('accumulates values for all symbols', () => {
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
+      newPortfolio = Portfolio.purchase(newPortfolio, 'IBM', 20)
+
+      const value = Portfolio.value(newPortfolio, stockLookupService)
+
+      expect(value).toEqual(
+        IbmCurrentValue * 20 +
+        BayerCurrentValue * 10 )
     })
   })
 })
