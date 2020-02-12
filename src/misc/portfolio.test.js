@@ -1,5 +1,7 @@
 import * as Portfolio from './portfolio'
 
+const BayerCurrentPrice = 21
+
 describe('a portfolio', () => {
   let portfolio
 
@@ -97,6 +99,23 @@ describe('a portfolio', () => {
       expect(() => {
         Portfolio.sell(newPortfolio, 'IBM', 20 + 1)
       }).toThrow(RangeError)
+    })
+  })
+
+  describe('value', () => {
+    it('is worthless when created', () => {
+      const result = Portfolio.value(portfolio)
+
+      expect(result).toEqual(0)
+    })
+
+    it('is worth share price on single purchase 1 share', () => {
+      const stockService = () => BayerCurrentPrice
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 1)
+
+      const result = Portfolio.value(newPortfolio, stockService)
+
+      expect(result).toEqual(BayerCurrentPrice)
     })
   })
 })

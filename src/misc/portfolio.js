@@ -1,3 +1,6 @@
+export const value = (portfolio, service) =>
+  isEmpty(portfolio) ? 0 : service()
+
 export const create = () => ({ holdings: {} })
 
 export const isEmpty = portfolio => uniqueSymbolCount(portfolio) === 0
