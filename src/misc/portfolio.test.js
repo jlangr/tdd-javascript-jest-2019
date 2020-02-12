@@ -52,7 +52,7 @@ describe('a portfolio', () => {
       expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(42)
     })
 
-    it('is 0 for symbol not bought', () => {
+    it('is 0 for symbol not purchased', () => {
       let newPortfolio = Portfolio.purchase(portfolio, 'IBM', 42)
 
       expect(Portfolio.sharesOf(newPortfolio, 'BAYN')).toEqual(0)
