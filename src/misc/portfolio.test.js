@@ -1,6 +1,8 @@
 import * as Portfolio from './portfolio'
+import { when } from 'jest-when'
 
 const BayerCurrentPrice = 21
+const AppleCurrentPrice = 2000
 
 describe('a portfolio', () => {
   let portfolio
@@ -15,7 +17,7 @@ describe('a portfolio', () => {
     })
 
     it('is not empty after purchase', () => {
-      const newPortfolio = Portfolio.purchase(portfolio, "BAYN", 1)
+      const newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 1)
 
       expect(Portfolio.isEmpty(newPortfolio)).toBe(false)
     })
@@ -116,6 +118,43 @@ describe('a portfolio', () => {
       const result = Portfolio.value(newPortfolio, stockService)
 
       expect(result).toEqual(BayerCurrentPrice)
+    })
+
+    it('is worth share price on single purchase 1 share', () => {
+      const stockService = () => BayerCurrentPrice
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
+
+      const result = Portfolio.value(newPortfolio, stockService)
+
+      expect(result).toEqual(BayerCurrentPrice * 10)
+    })
+
+    it('totals values for all holdings (symbols)', () => {
+      const stockService = (symbol) =>
+        symbol === 'BAYN' ? BayerCurrentPrice : AppleCurrentPrice
+
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
+      newPortfolio = Portfolio.purchase(newPortfolio, 'AAPL', 20)
+
+      const result = Portfolio.value(newPortfolio, stockService)
+      console.log('result of value is ', result)
+
+      expect(result).toEqual(
+        BayerCurrentPrice * 10 + AppleCurrentPrice * 20)
+    })
+
+    it('jest mock -- totals values for all holdings (symbols)', () => {
+      const stockService = jest.fn()
+      when(stockService).calledWith('BAYN').mockReturnValue(BayerCurrentPrice)
+      when(stockService).calledWith('AAPL').mockReturnValue(AppleCurrentPrice)
+
+      let newPortfolio = Portfolio.purchase(portfolio, 'BAYN', 10)
+      newPortfolio = Portfolio.purchase(newPortfolio, 'AAPL', 20)
+
+      const result = Portfolio.value(newPortfolio, stockService)
+
+      expect(result).toEqual(
+        BayerCurrentPrice * 10 + AppleCurrentPrice * 20)
     })
   })
 })

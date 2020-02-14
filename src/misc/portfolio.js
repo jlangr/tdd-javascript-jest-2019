@@ -1,5 +1,18 @@
-export const value = (portfolio, service) =>
-  isEmpty(portfolio) ? 0 : service()
+export const value = (portfolio, service) => {
+  /*
+  portfolio.holdings:
+  { bayn: 10, aapl: 20 }
+   */
+
+  let total = 0
+  Object.keys(portfolio.holdings).forEach(symbol => {
+    total += service(symbol) * sharesOf(portfolio, symbol)
+  })
+  return total
+}
+
+// service --> emulating a real service that takes on
+// one symbol at a time, e.g. 'BAYN'.
 
 export const create = () => ({ holdings: {} })
 
@@ -23,7 +36,8 @@ export const sell = (portfolio, symbol, shares) => {
 }
 
 export const transact = (portfolio, symbol, shares) =>
-  ({ ...portfolio,
+  ({
+    ...portfolio,
     holdings: {
       ...portfolio.holdings, [symbol]: sharesOf(portfolio, symbol) + shares
     }
